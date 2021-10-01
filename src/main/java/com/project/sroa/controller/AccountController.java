@@ -20,7 +20,7 @@ public class AccountController {
         userR.save(userInfo);
     }
 
-    @GetMapping("/user/account/login/{id}/{pw}")
+    @GetMapping("/user/account/login")
     public void login(){
 
     }
