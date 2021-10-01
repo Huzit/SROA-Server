@@ -1,9 +1,6 @@
 package com.project.sroa.model;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Date;
 
 @Entity
@@ -13,8 +10,18 @@ public class Schedule {
     public long sheduleNum;
     public Date startDate;
     public Date endDate;
-    public long status;
-    public long serialNum;
-    public long userNum;
-    public long engineerNum;
+    public String problem;
+    public Integer status;
+
+    @OneToOne
+    @JoinColumn(name="productNum")
+    Product product;
+
+    @ManyToOne
+    @JoinColumn(name="userNum")
+    UserInfo userInfo;
+
+    @ManyToOne
+    @JoinColumn(name="engineerNum")
+    EngineerInfo engineerInfo;
 }

@@ -1,9 +1,6 @@
 package com.project.sroa.model;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Entity
 public class EngineerInfo {
@@ -12,6 +9,12 @@ public class EngineerInfo {
     public long engineerNum;
     public long avgScore;
     public String workingArea;
-    public  long userNum;
-    public long empNum;
+
+    @OneToOne
+    @JoinColumn(name="userNum")
+    UserInfo userInfo;
+
+    @OneToOne
+    @JoinColumn(name="empNum")
+    EmployeeInfo employeeInfo;
 }

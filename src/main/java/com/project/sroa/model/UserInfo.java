@@ -16,5 +16,5 @@ public class UserInfo {
     public String name;
     public String address;
     public long phoneNum;
-    public long code;
+    public Integer code;
 }

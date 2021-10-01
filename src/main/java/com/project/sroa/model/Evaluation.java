@@ -1,18 +1,18 @@
 package com.project.sroa.model;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.util.Date;
 
 @Entity
 public class Evaluation {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     public long evaluationNum;
+    public Date writeDate;
     public String content;
     public long score;
-    public long userNum;
-    public long scheduleNum;
-    public long engineerNum;
+
+    @OneToOne
+    @JoinColumn(name="scheduleNum")
+    Schedule schedule;
 }

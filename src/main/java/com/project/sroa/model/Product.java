@@ -9,8 +9,7 @@ import javax.persistence.Id;
 public class Product {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    public long serialNum;
+    public long productNum;
     public String classifyCode;
     public String modelName;
-    public long engineerNum;
 }

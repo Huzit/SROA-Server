@@ -11,4 +11,5 @@ public class EmployeeInfo {
     @GeneratedValue(strategy= GenerationType.AUTO)
     public long empNum;
     public String name;
+
 }
