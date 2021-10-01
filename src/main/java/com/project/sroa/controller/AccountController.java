@@ -5,8 +5,7 @@ import com.project.sroa.repository.EngineerInfoRepository;
 import com.project.sroa.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class AccountController {
@@ -16,8 +15,15 @@ public class AccountController {
     EngineerInfoRepository engineerR;
 
     @PostMapping("/user/account/singup")
-    public String userSignup(@ModelAttribute UserInfo userInfo){
+    public void userSignup(@RequestBody UserInfo userInfo){
+
         userR.save(userInfo);
-        return null;
     }
+
+    @GetMapping("/user/account/login/{id}/{pw}")
+    public void login(){
+
+    }
+
+
 }
