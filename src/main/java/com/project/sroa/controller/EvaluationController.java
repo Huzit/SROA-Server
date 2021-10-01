@@ -1,4 +1,4 @@
 package com.project.sroa.controller;
 
-public class EmaluationController {
+public class EvaluationController {
 }

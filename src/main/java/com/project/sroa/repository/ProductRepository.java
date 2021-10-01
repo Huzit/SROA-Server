@@ -1,6 +1,10 @@
 package com.project.sroa.repository;
 
+import com.project.sroa.model.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ProductRepository extends JpaRepository<> {
+import java.util.List;
+
+public interface ProductRepository extends JpaRepository<Product,Long> {
+    List<Product> findAll();
 }
