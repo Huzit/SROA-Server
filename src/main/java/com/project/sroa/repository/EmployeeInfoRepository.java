@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface EmployeeInfoRepository extends JpaRepository<EmployeeInfo,Long> {
     List<EmployeeInfo> findAll();
+//    boolean existsByempNum(Long empNum);
+    EmployeeInfo findByempNum(Long empNum);
 }

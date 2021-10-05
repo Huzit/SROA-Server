@@ -9,7 +9,7 @@ import javax.persistence.Id;
 public class Product {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    public long productNum;
-    public String classifyCode;
-    public String modelName;
+    private long productNum;
+    private String classifyCode;
+    private String modelName;
 }

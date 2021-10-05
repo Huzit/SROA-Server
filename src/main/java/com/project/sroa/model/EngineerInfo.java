@@ -1,20 +1,39 @@
 package com.project.sroa.model;
 
+import com.project.sroa.dto.SignupEngineer;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.apache.catalina.User;
+
 import javax.persistence.*;
 
 @Entity
+@Getter
+@NoArgsConstructor
 public class EngineerInfo {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    public long engineerNum;
-    public long avgScore;
-    public String workingArea;
+    private long engineerNum;
+    private long avgScore;
+    private String workingArea;
 
     @OneToOne
     @JoinColumn(name="userNum")
-    UserInfo userInfo;
+    private UserInfo userInfo;
 
     @OneToOne
     @JoinColumn(name="empNum")
-    EmployeeInfo employeeInfo;
+    private EmployeeInfo employeeInfo;
+
+    @Builder
+    public EngineerInfo(UserInfo userInfo, EmployeeInfo employeeInfo, String workingArea){
+        this.workingArea=workingArea;
+        this.avgScore=0;
+        this.userInfo=userInfo;
+        this.employeeInfo=employeeInfo;
+
+    }
+
+
 }

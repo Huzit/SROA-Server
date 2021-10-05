@@ -7,21 +7,21 @@ import java.util.Date;
 public class Schedule {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    public long sheduleNum;
-    public Date startDate;
-    public Date endDate;
-    public String problem;
-    public Integer status;
+    private long sheduleNum;
+    private Date startDate;
+    private Date endDate;
+    private String problem;
+    private Integer status;
 
     @OneToOne
     @JoinColumn(name="productNum")
-    Product product;
+    private Product product;
 
     @ManyToOne
     @JoinColumn(name="userNum")
-    UserInfo userInfo;
+    private UserInfo userInfo;
 
     @ManyToOne
     @JoinColumn(name="engineerNum")
-    EngineerInfo engineerInfo;
+    private EngineerInfo engineerInfo;
 }
