@@ -7,12 +7,12 @@ import java.util.Date;
 public class Evaluation {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    public long evaluationNum;
-    public Date writeDate;
-    public String content;
-    public long score;
+    private long evaluationNum;
+    private Date writeDate;
+    private String content;
+    private long score;
 
     @OneToOne
     @JoinColumn(name="scheduleNum")
-    Schedule schedule;
+    private Schedule schedule;
 }
