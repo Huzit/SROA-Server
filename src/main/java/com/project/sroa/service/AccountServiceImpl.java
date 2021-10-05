@@ -42,7 +42,7 @@ public class AccountServiceImpl implements AccountService{
     @Override
     // 엔지니어의 회원가입
     public boolean createNewEngineer(SignupEngineer info) {
-        EmployeeInfo employeeInfo=employeeInfoRepository.findByempNum(info.getEmpNum());
+        EmployeeInfo employeeInfo=employeeInfoRepository.findByEmpNum(info.getEmpNum());
         //사용가능한 사원번호인지
         if(employeeInfo==null){
             System.out.println("엔지니어 회원가입 : 가입되지 않은 사원번호입니다.");
