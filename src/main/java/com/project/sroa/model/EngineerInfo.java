@@ -14,8 +14,8 @@ import javax.persistence.*;
 public class EngineerInfo {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    private long engineerNum;
-    private long avgScore;
+    private Long engineerNum;
+    private Integer avgScore;
     private String workingArea;
 
     @OneToOne

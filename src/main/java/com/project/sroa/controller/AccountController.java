@@ -19,7 +19,7 @@ public class AccountController {
     }
 
     // 고객 회원가입
-    @PostMapping("/account/user/singup")
+    @PostMapping("/account/customer/singup")
     public boolean userSignup(@RequestBody UserInfo userInfo){
         return  accountService.createNewUser(userInfo);
     }

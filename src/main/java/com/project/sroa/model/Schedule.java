@@ -1,13 +1,16 @@
 package com.project.sroa.model;
 
+import lombok.Data;
+
 import javax.persistence.*;
 import java.util.Date;
 
 @Entity
+@Data
 public class Schedule {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    private long sheduleNum;
+    private Long scheduleNum;
     private Date startDate;
     private Date endDate;
     private String problem;

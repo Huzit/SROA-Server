@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 public class SignupEngineer {
-    private long empNum;
+    private Long empNum;
     public String id;
     public String pw;
     public String name;

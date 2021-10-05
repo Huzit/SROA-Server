@@ -1,18 +1,32 @@
 package com.project.sroa.model;
 
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import javax.persistence.*;
 import java.util.Date;
 
 @Entity
+@NoArgsConstructor
+@Getter
 public class Evaluation {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    private long evaluationNum;
+    private Long evaluationNum;
     private Date writeDate;
     private String content;
-    private long score;
+    private Integer score;
 
     @OneToOne
     @JoinColumn(name="scheduleNum")
     private Schedule schedule;
+
+    @Builder
+    public Evaluation(Date writeDate, String content, Integer score, Schedule schedule){
+        this.writeDate=writeDate;
+        this.content=content;
+        this.score=score;
+        this.schedule=schedule;
+    }
 }

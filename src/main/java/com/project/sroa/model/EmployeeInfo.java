@@ -9,7 +9,7 @@ import javax.persistence.Id;
 public class EmployeeInfo {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    public long empNum;
+    public Long empNum;
     public String name;
 
 }
