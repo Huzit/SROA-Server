@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface EmployeeInfoRepository extends JpaRepository<EmployeeInfo,Long> {
 
+    EmployeeInfo findByEmpNum(Long empNum);
 }
