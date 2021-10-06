@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import javax.transaction.Transactional;
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface ScheduleRepository extends JpaRepository<Schedule,Long> {
@@ -20,4 +21,9 @@ public interface ScheduleRepository extends JpaRepository<Schedule,Long> {
     void updateStatus(long scheduleNum, Integer status);
 
     Schedule findByScheduleNum(Long scheduleNum);
+
+    @Transactional
+    @Modifying
+    @Query("UPDATE Schedule s SET s.endDate=?2 WHERE s.scheduleNum=?1")
+    void updateEndDate(Long scheduleNum ,Timestamp valueOf);
 }

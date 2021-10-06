@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import javax.transaction.Transactional;
-import java.util.List;
 
 public interface EngineerInfoRepository extends JpaRepository<EngineerInfo,Long> {
 
@@ -17,6 +16,11 @@ public interface EngineerInfoRepository extends JpaRepository<EngineerInfo,Long>
     @Modifying
     @Query("UPDATE EngineerInfo e SET e.avgScore=?2 WHERE e.engineerNum=?1")
     void updateEngineerScore(long engineerNum, Integer avgScore);
+
+    @Transactional
+    @Modifying
+    @Query("UPDATE EngineerInfo e SET e.amountOfWork=e.amountOfWork+1 WHERE e.engineerNum=?1")
+    void updateEngineerAmountOfWork(long engineerNum);
 
     EngineerInfo findByEngineerNum(long engineerNum);
 }

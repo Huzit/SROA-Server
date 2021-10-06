@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.sql.Timestamp;
 
 @Entity
 @NoArgsConstructor
@@ -14,7 +14,7 @@ public class Evaluation {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     private Long evaluationNum;
-    private Date writeDate;
+    private Timestamp writeDate;
     private String content;
     private Integer score;
 
@@ -23,7 +23,7 @@ public class Evaluation {
     private Schedule schedule;
 
     @Builder
-    public Evaluation(Date writeDate, String content, Integer score, Schedule schedule){
+    public Evaluation(Timestamp writeDate, String content, Integer score, Schedule schedule){
         this.writeDate=writeDate;
         this.content=content;
         this.score=score;
