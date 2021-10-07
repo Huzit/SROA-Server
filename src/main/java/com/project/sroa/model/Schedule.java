@@ -1,27 +1,30 @@
 package com.project.sroa.model;
 
+import lombok.Data;
+
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
+@Data
 public class Schedule {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    public long sheduleNum;
-    public Date startDate;
-    public Date endDate;
-    public String problem;
-    public Integer status;
+    private Long scheduleNum;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+    private String problem;
+    private Integer status;
 
     @OneToOne
     @JoinColumn(name="productNum")
-    Product product;
+    private Product product;
 
     @ManyToOne
     @JoinColumn(name="userNum")
-    UserInfo userInfo;
+    private UserInfo userInfo;
 
     @ManyToOne
     @JoinColumn(name="engineerNum")
-    EngineerInfo engineerInfo;
+    private EngineerInfo engineerInfo;
 }

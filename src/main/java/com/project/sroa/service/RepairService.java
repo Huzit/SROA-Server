@@ -1,7 +1,8 @@
 package com.project.sroa.service;
 
-import org.springframework.stereotype.Service;
+import com.project.sroa.dto.ScheduleHandling;
 
-@Service
+
 public interface RepairService {
+    void updateState(ScheduleHandling form);
 }

@@ -1,7 +1,13 @@
 package com.project.sroa.service;
 
-import org.springframework.stereotype.Service;
+import com.project.sroa.dto.WriteEvaluation;
+import com.project.sroa.model.Evaluation;
 
-@Service
+import java.util.List;
+
+
 public interface EvaluationService {
+    boolean storeEvaluation(WriteEvaluation form);
+
+    List<Evaluation> evaluationOfEngineer(long engineerNum);
 }
