@@ -5,5 +5,6 @@ import java.util.List;
 
 
 public interface ScheduleService {
-    List<Boolean> searchAvailableTime(LocalDateTime date, String address);
+    List<Boolean> searchAvailableTime(String date, String address);
+//    List<Boolean> searchAvailableTime(LocalDateTime date, String address);
 }

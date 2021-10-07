@@ -10,6 +10,6 @@ public class Product {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     private Long productNum;
-    private String classifyCode;
-    private String modelName;
+    private String classifyName;
+    private String problem;
 }

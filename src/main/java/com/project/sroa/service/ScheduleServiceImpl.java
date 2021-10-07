@@ -1,32 +1,38 @@
 package com.project.sroa.service;
 
+import com.project.sroa.model.EngineerInfo;
+import com.project.sroa.model.Schedule;
 import com.project.sroa.model.ServiceCenter;
+import com.project.sroa.repository.EngineerInfoRepository;
+import com.project.sroa.repository.ScheduleRepository;
 import com.project.sroa.repository.ServiceCenterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Service
 @SuppressWarnings("unchecked")
 public class ScheduleServiceImpl implements ScheduleService {
+    String[] times = {"09:00", "10:30", "12:30", "14:00", "15:30", "17:00"};
     String apiKey = "553DD31F-7E58-3853-8B42-951509B85AAF";
-    ServiceCenterRepository serviceCenterRepository;
 
-    class Coordinates {
+    ServiceCenterRepository serviceCenterRepository;
+    EngineerInfoRepository engineerInfoRepository;
+    ScheduleRepository scheduleRepository;
+
+    public class Coordinates {
         Double lon; //경도
         Double lat; //위도
 
@@ -36,59 +42,104 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
     }
 
-    class Center {
-        ServiceCenter serviceCenter;
-        Integer distanceFromCustomer;
-
-        Center(ServiceCenter serviceCenter, double distanceFromCustomer) {
-            this.serviceCenter = serviceCenter;
-            this.distanceFromCustomer = Math.toIntExact(Math.round(distanceFromCustomer));
-        }
-    }
-
     @Autowired
-    public ScheduleServiceImpl(ServiceCenterRepository serviceCenterRepository) {
+    public ScheduleServiceImpl(ServiceCenterRepository serviceCenterRepository,
+                               EngineerInfoRepository engineerInfoRepository,
+                               ScheduleRepository scheduleRepository) {
         this.serviceCenterRepository = serviceCenterRepository;
+        this.engineerInfoRepository = engineerInfoRepository;
+        this.scheduleRepository = scheduleRepository;
     }
 
     @Override
-    public List<Boolean> searchAvailableTime(LocalDateTime date, String address) {
+    public List<Boolean> searchAvailableTime(String date, String address) {
         // 가까운 서비스 센텀 찾기
-        Center center = searchNearCenter(address);
+        Map<String, Object> closeCenter = searchNearCenter(address);
+        ServiceCenter serviceCenter = serviceCenterRepository.findByCenterNum((Long) closeCenter.get("centerNum"));
+        Integer distance = Math.toIntExact(Math.round((Double) closeCenter.get("distance")));
 
-        ServiceCenter serviceCenter = center.serviceCenter;
-        Integer distance = center.distanceFromCustomer;
         System.out.println("가까운 서비스 센터명 : " + serviceCenter.getCenterName());
         System.out.println("가까운 서비스 센터주소 : " + serviceCenter.getAddress());
         System.out.println("거리 : " + distance + " meter");
-        // 해당 센터의 엔지니어 타타임 테이블
-        return null;
+
+        Integer totalEngineers = engineerInfoRepository.findByServiceCenter(serviceCenter).size();
+
+        // 해당 센터의 엔지니어의 일정 조회
+        List<Boolean> res=new ArrayList<>();
+        Map<String, Object> availableEngineers = searchAvailableEngineer(date, serviceCenter);
+        for(String time:times){
+            Integer possibleEngineersAtTimeCnt = ((List<EngineerInfo>) availableEngineers.get(time)).size();
+            if(totalEngineers-possibleEngineersAtTimeCnt<=0){
+                res.add(false);
+            }
+            else{
+                res.add(true);
+            }
+            System.out.println(date+" "+time+"에 예약가능한 엔지니어 수 : "+ possibleEngineersAtTimeCnt);
+        }
+        return res;
     }
 
-    private Center searchNearCenter(String customerAddress) {
+    // 날짜 선택시 가능한 엔지니어, 날짜 + 시간 선택시 엔지니어 할당을 위한 가능 엔지니어
+    // return map 시간대 - 가능 엔지니어 리스트
+    private Map<String, Object> searchAvailableEngineer(String date, ServiceCenter serviceCenter) {
+        Map<String, Object> map = new HashMap<>();
+
+        String[] searchTimes;
+        if(date.length()>=10){
+            searchTimes = times;
+        }
+        else{
+            searchTimes= new String[]{date};
+        }
+
+        System.out.println("담당 서비스 센터 번호 : "+serviceCenter.getCenterNum());
+        for (String time : times) {
+            String dateTime = date + " " + time;
+            List<EngineerInfo> list=engineerInfoRepository.findAllPossibleEngineerByDate(serviceCenter.getCenterNum(), dateTime);
+            map.put(time, list);
+        }
+        return map;
+    }
+
+
+    private Map<String, Object> searchNearCenter(String customerAddress) {
         String rootAddress = customerAddress.split(" ")[0];
-        List<ServiceCenter> list = serviceCenterRepository.findByAddressContaining(rootAddress);
+        List<ServiceCenter> serviceCenters = serviceCenterRepository.findByAddressContaining(rootAddress);
 
         Coordinates customerCoordinates = findCoordinates(customerAddress);
 
         double min = 100000.0;
         int min_idx = 0, idx = 0;
-        for (ServiceCenter s : list) {
+        for (ServiceCenter s : serviceCenters) {
             assert customerCoordinates != null;
-            Double now = harverSine(customerCoordinates, Objects.requireNonNull(findCoordinates(s.getAddress())));
 
+            System.out.println(s.getCenterName() + "의 위도, 경도 = " + "(" + s.getLatitude() + ", " + s.getLongitude() + ")");
+            if (s.getLongitude() == null || s.getLatitude() == null) {
+                System.out.println("현재 서비스 센터의 위도, 경도 정보가 없어 갱신");
+                Coordinates coordinates = findCoordinates(s.getAddress());
+                s.setLatitude(coordinates.lat);
+                s.setLongitude(coordinates.lon);
+                serviceCenterRepository.updatePos(s.getLatitude(), s.getLongitude(), s.getCenterNum());
+            }
+
+            Double now = harverSine(customerCoordinates, new Coordinates(s.getLongitude(), s.getLatitude()));
+            System.out.println("고객 정보와 " + s.getCenterName() + "의 거리 완료");
             if (now < min) {
                 min = now;
                 min_idx = idx;
             }
             idx += 1;
         }
-        return new Center(list.get(min_idx), min);
+        System.out.println("같은지역의 서비스 센터 및 최소 거리 탐색 완료");
+        Map<String, Object> map = new HashMap<>();
+        map.put("centerNum", serviceCenters.get(min_idx).getCenterNum());
+        map.put("distance", min);
+        return map;
     }
 
     // 직선거리 미터 반환
     private Double harverSine(Coordinates coordinates1, Coordinates coordinates2) {
-
         double dist;
         double radius = 6371;//지구 반지름
         double toRadian = Math.PI / 180; // 라디안 변환을 위해
@@ -102,12 +153,10 @@ public class ScheduleServiceImpl implements ScheduleService {
         double squareRoot = Math.sqrt(
                 sinDeltaLat * sinDeltaLat +
                         Math.cos(coordinates1.lat) * Math.cos(coordinates2.lat) * sinDeltaLat * sinDeltaLon);
+
         dist = 2 * radius * Math.asin(squareRoot);
         return dist * 1000;
     }
-
-
-
 
     // 지번 주소에 대해 좌표 계산
     private Coordinates findCoordinates(String customerAddress) {
@@ -162,6 +211,4 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
         return null;
     }
-
-
 }

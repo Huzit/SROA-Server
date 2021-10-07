@@ -24,11 +24,10 @@ public class ScheduleController {
     }
 
     // 고객 날짜 선택시 예약 가능 현황 조회
+    //[ 09:00 ,10:30, 12:30, 14:00, 15:30, 17:00]
     @GetMapping("/schedule/findAvailableTime/{date}/{address}")
-    public List<Boolean> findAvailableTime(@PathVariable("date")
-                                               @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm") LocalDateTime date,
+    public List<Boolean> findAvailableTime(@PathVariable("date") String date,
                                            @PathVariable("address") String address) {
-
         return scheduleService.searchAvailableTime(date, address);
     }
 

@@ -15,4 +15,6 @@ public class ServiceCenter {
     private Long centerNum;
     private String centerName;
     private String address;
+    private Double latitude;
+    private Double longitude;
 }

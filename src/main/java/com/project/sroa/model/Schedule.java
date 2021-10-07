@@ -13,7 +13,6 @@ public class Schedule {
     private Long scheduleNum;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private String problem;
     private Integer status;
 
     @OneToOne
