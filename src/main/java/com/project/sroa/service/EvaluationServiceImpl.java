@@ -10,6 +10,9 @@ import com.project.sroa.repository.ScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,8 +53,9 @@ public class EvaluationServiceImpl implements EvaluationService {
         scheduleRepository.updateStatus(schedule.getScheduleNum(), 4);
         System.out.println("평가 작성 : 일정 상태 변경(평가작성 완료)");
         // 평가 작성
+
         Evaluation evaluation = Evaluation.builder()
-                .writeDate(form.getWriteDate())
+                .writeDate(Timestamp.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))))
                 .content(form.getContent())
                 .score(form.getScore())
                 .schedule(schedule)

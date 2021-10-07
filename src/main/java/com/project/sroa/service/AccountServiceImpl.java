@@ -3,9 +3,11 @@ package com.project.sroa.service;
 import com.project.sroa.dto.SignupEngineer;
 import com.project.sroa.model.EmployeeInfo;
 import com.project.sroa.model.EngineerInfo;
+import com.project.sroa.model.ServiceCenter;
 import com.project.sroa.model.UserInfo;
 import com.project.sroa.repository.EmployeeInfoRepository;
 import com.project.sroa.repository.EngineerInfoRepository;
+import com.project.sroa.repository.ServiceCenterRepository;
 import com.project.sroa.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,14 +17,16 @@ public class AccountServiceImpl implements AccountService{
     UserInfoRepository userInfoRepository;
     EngineerInfoRepository engineerInfoRepository;
     EmployeeInfoRepository employeeInfoRepository;
-
+    ServiceCenterRepository serviceCenterRepository;
     @Autowired
     public AccountServiceImpl(UserInfoRepository userInfoRepository,
                               EngineerInfoRepository engineerInfoRepository,
-                              EmployeeInfoRepository employeeInfoRepository){
+                              EmployeeInfoRepository employeeInfoRepository,
+                              ServiceCenterRepository serviceCenterRepository){
         this.userInfoRepository=userInfoRepository;
         this.engineerInfoRepository=engineerInfoRepository;
         this.employeeInfoRepository=employeeInfoRepository;
+        this.serviceCenterRepository=serviceCenterRepository;
     }
 
 
@@ -72,9 +76,11 @@ public class AccountServiceImpl implements AccountService{
         userInfo.setCode(2);
         userInfoRepository.save(userInfo);
 
+        ServiceCenter serviceCenter=serviceCenterRepository.findByCenterName(info.getWorkingArea());
+
         EngineerInfo engineerInfo=EngineerInfo.builder()
                 .employeeInfo(employeeInfo)
-                .workingArea(info.getWorkingArea())
+                .serviceCenter(serviceCenter)
                 .userInfo(userInfo)
                 .build();
 

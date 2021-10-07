@@ -1,6 +1,5 @@
 package com.project.sroa.dto;
 
-import com.project.sroa.model.UserInfo;
 import lombok.Getter;
 
 @Getter

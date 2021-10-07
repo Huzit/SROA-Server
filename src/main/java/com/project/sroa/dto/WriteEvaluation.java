@@ -9,6 +9,4 @@ public class WriteEvaluation {
     private String content;
     private Integer score;
     private Long scheduleNum;
-    private Date writeDate;
-
 }
