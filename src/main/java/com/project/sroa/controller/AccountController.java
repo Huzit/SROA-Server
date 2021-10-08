@@ -26,6 +26,7 @@ public class AccountController {
     // 엔지니어 회원가입
     @PostMapping("/account/engineer/singup")
     public boolean engineerSignup(@RequestBody SignupEngineer info){
+
         return accountService.createNewEngineer(info);
     }
 

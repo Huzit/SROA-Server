@@ -76,7 +76,7 @@ public class AccountServiceImpl implements AccountService{
         userInfo.setCode(2);
         userInfoRepository.save(userInfo);
 
-        ServiceCenter serviceCenter=serviceCenterRepository.findByCenterName(info.getWorkingArea());
+        ServiceCenter serviceCenter=serviceCenterRepository.findByCenterName(info.getCenterName());
 
         EngineerInfo engineerInfo=EngineerInfo.builder()
                 .employeeInfo(employeeInfo)

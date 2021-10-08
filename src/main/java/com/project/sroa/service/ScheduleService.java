@@ -1,10 +1,28 @@
 package com.project.sroa.service;
 
-import java.time.LocalDateTime;
+import com.project.sroa.model.EngineerInfo;
+import com.project.sroa.model.ServiceCenter;
+
 import java.util.List;
+import java.util.Map;
 
 
 public interface ScheduleService {
-    List<Boolean> searchAvailableTime(String date, String address);
+    Map<String, Object> searchNearCenter(String address);
+
+    List<Integer> findOptimumEngineer(List<EngineerInfo> engineers, Integer distBetweenCustomerAndCenter, String dateTime, Coordinates customerCoor);
+
+    public class Coordinates {
+        Double lon; //경도
+        Double lat; //위도
+
+        Coordinates(Double x, Double y) {
+            this.lon = x;
+            this.lat = y;
+        }
+    }
+
+    Map<String, Object> noScheduleEngineerAtTime(String date, ServiceCenter serviceCenter);
+    List<Boolean> searchAvailableTime(String date, Map<String, Object> closeCenter);
 //    List<Boolean> searchAvailableTime(LocalDateTime date, String address);
 }
