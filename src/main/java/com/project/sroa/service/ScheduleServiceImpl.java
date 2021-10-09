@@ -25,8 +25,21 @@ import java.util.Map;
 @Service
 @SuppressWarnings("unchecked")
 public class ScheduleServiceImpl implements ScheduleService {
+    Integer MAX = 987654321;
     String[] times = {"09:00", "10:30", "12:30", "14:00", "15:30", "17:00"};
     String apiKey = "553DD31F-7E58-3853-8B42-951509B85AAF";
+
+    class sortElem {
+        Long num;
+        Integer dist;
+        Integer dirDiff;
+
+        sortElem(Long num, Integer dist, Integer dirDiff) {
+            this.num = num;
+            this.dist = dist;
+            this.dirDiff = dirDiff;
+        }
+    }
 
     ServiceCenterRepository serviceCenterRepository;
     EngineerInfoRepository engineerInfoRepository;
@@ -58,7 +71,9 @@ public class ScheduleServiceImpl implements ScheduleService {
         for (String time : times) {
             time = date + " " + time;
             Integer possibleEngineersAtTimeCnt = ((List<EngineerInfo>) availableEngineers.get(time)).size();
-            if (totalEngineers - possibleEngineersAtTimeCnt <= 0) {
+
+            System.out.println(possibleEngineersAtTimeCnt);
+            if (possibleEngineersAtTimeCnt > 0) {
                 res.add(true);
             } else {
                 res.add(false);
@@ -106,7 +121,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         Coordinates customerCoordinates = findCoordinates(customerAddress);
 
-        Integer min = 100000;
+        Integer min = MAX;
         int min_idx = 0, idx = 0;
         for (ServiceCenter s : serviceCenters) {
             assert customerCoordinates != null;
@@ -135,6 +150,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         Map<String, Object> map = new HashMap<>();
         map.put("center", serviceCenters.get(min_idx));
+        map.put("centerCoor", findCoordinates(serviceCenters.get(min_idx).getAddress()));
         map.put("distance", min);
         map.put("customerCoor", customerCoordinates);
         return map;
@@ -142,9 +158,15 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     // 날짜 + 시간에 활동 가능한 엔지니어 중 최적의 엔지니어 탐색
     @Override
-    public List<Integer> findOptimumEngineer(List<EngineerInfo> engineers, Integer distBetweenCustomerAndCenter, String dateTime, Coordinates customerCoor) {
-        List<Integer> distBetweenCustomerAndEach = new ArrayList<>();
+    public EngineerInfo findOptimumEngineer(List<EngineerInfo> engineers, Coordinates centerCoor, String dateTime, Coordinates customerCoor) {
+        List<sortElem> decideList = new ArrayList<>();
+        List<Long> sortEngineerNumList = new ArrayList<>();
 
+        Integer distBetweenCustomerAndCenter_first = harverSine(centerCoor, customerCoor);
+        Integer dist;
+        Integer dirDiff;
+        Coordinates beforeCoor;
+        Coordinates afterCoor;
         // 활동가능한 엔지니어의 고객과의 거리 조회
         for (EngineerInfo engineer : engineers) {
             System.out.println("현재 탐색 엔지니어 번호 : " + engineer.getEngineerNum());
@@ -152,32 +174,202 @@ public class ScheduleServiceImpl implements ScheduleService {
             System.out.println("엔지니어 일정 탐색");
             List<Schedule> timeOfSchedules = scheduleRepository.findAllScheduleTimeByEngineerNumAndDate(engineer.getEngineerNum(), _dateTime);
             int scheduleSize = timeOfSchedules.size();
-            // 당일에 일정이 없으면 센터의 위치로 거리등록
-            if (timeOfSchedules.size() == 0) {
-                distBetweenCustomerAndEach.add(distBetweenCustomerAndCenter);
-                System.out.println("당일 일정 없음");
-                continue;
-            }
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm");
 
-            // 이번에 할당될 일정이 마지막 일정보다 시간적으로 뒤
-            String string = timeOfSchedules.get(scheduleSize - 1).getStartDate().format(formatter);
-            if (dateTime.compareTo(string) > 0) {
-                System.out.println("현재 할당되는 일정이 마지막 일정");
-                distBetweenCustomerAndEach.add(harverSine(customerCoor, findCoordinates(timeOfSchedules.get(scheduleSize - 1).getAddress())));
-                continue;
+
+            // 당일에 일정이 없으면 센터의 위치로 거리등록
+            if (timeOfSchedules.size() == 0) {
+                dist = distBetweenCustomerAndCenter_first;
+                dirDiff = 360;
+                decideList.add(new sortElem(engineer.getEngineerNum(), dist, dirDiff));
+                System.out.println("당일 일정 없음");
             }
-            // 현재 할당될 일정이 일정 사이 or 다른 일정들 보다 일찍 시작되는 일정정
-//           else{
-//
-//            }
+            // 이번에 할당될 일정이 마지막 일정보다 시간적으로 뒤
+            else {
+                String string = timeOfSchedules.get(scheduleSize - 1).getStartDate().format(formatter);
+                if (dateTime.compareTo(string) > 0) {
+                    System.out.println("현재 할당되는 일정이 마지막 일정");
+                    afterCoor = findCoordinates(timeOfSchedules.get(scheduleSize - 1).getAddress());
+                    dist = harverSine(customerCoor, afterCoor);
 
+                    // 일정이 한개라면 방향성 : 센터 - 원래 일정 - 현재 할당 일정
+                    if (timeOfSchedules.size() == 1) {
+                        beforeCoor = centerCoor;
+                    } else {
+                        beforeCoor = findCoordinates(timeOfSchedules.get(scheduleSize - 2).getAddress());
+                    }
+                    dirDiff = calcDirDiff(beforeCoor, afterCoor, customerCoor);
 
+                    decideList.add(new sortElem(engineer.getEngineerNum(), dist, dirDiff));
+                }
+                // 현재 할당될 일정이 일정 사이 or 다른 일정들 보다 일찍 시작되는 일정정
+                else {
+                    Integer beforeScheduleDist;
+                    Integer afterScheduleDist;
+                    int idx = 0;
+
+                    // 할당 될 일정이 다른 일정보다 빠른지 판단 요소
+                    for (Schedule schedule : timeOfSchedules) {
+                        string = schedule.getStartDate().format(formatter);
+                        if (dateTime.compareTo(string) < 0) {
+                            idx -= 1;
+                            break;
+                        }
+                        idx++;
+                    }
+                    // 다른 일정들보다 시간이 빠름
+                    if (idx == -1) {
+                        //전 - 센터, 중간 - 이번 일정, 후 - 이번에 배정되는 일정 뒤의 일정(idx+1)
+                        beforeScheduleDist = harverSine(centerCoor, customerCoor);
+
+                        afterCoor = findCoordinates(timeOfSchedules.get(idx + 1).getAddress());
+                        afterScheduleDist = harverSine(customerCoor, afterCoor);
+
+                        dist = Math.round((beforeScheduleDist + afterScheduleDist) / 2);
+                        dirDiff = calcDirDiff(centerCoor, customerCoor, afterCoor);
+                        decideList.add(new sortElem(engineer.getEngineerNum(), dist, dirDiff));
+                    } else {
+                        // 전 -  이번에 배정되는 일정 전의 일정(idx) 중간 - 이번 일정, 후 - 이번에 배정되는 일정 뒤의 일정(idx+1)
+                        beforeCoor = findCoordinates(timeOfSchedules.get(idx).getAddress());
+                        beforeScheduleDist = harverSine(beforeCoor, customerCoor);
+
+                        afterCoor = findCoordinates(timeOfSchedules.get(idx + 1).getAddress());
+                        afterScheduleDist = harverSine(customerCoor, afterCoor);
+
+                        dist = Math.round((beforeScheduleDist + afterScheduleDist) / 2);
+                        dirDiff = calcDirDiff(beforeCoor, customerCoor, afterCoor);
+                        decideList.add(new sortElem(engineer.getEngineerNum(), dist, dirDiff));
+                    }
+                }
+            }
+            System.out.println("현재 엔지니어 번호 : "+engineer.getEngineerNum());
+            System.out.println("고객과의 평가 거리 : "+ dist);
         }
+        // 엔지너어들의 거리, 방향성을 이용하여 1차 선별
+        sortEngineerNumList = findOptimunEngineerGroup(decideList);
+        // 선별된 엔지니어가 여러명일수 있기때문에 작업량으로 최종 선별
+        return findSmallestWorkEngineer(sortEngineerNumList);
+    }
+    // findOptimunEngineerGroup의 함수의 결과가 여러명일 수 있기 때문에 작업량이 적은 엔지니어를 선별
+    private EngineerInfo findSmallestWorkEngineer(List<Long> sortEngineerNumList) {
+        System.out.println("최종 선별 후 엔지니어 수 : "+ sortEngineerNumList.size());
+        EngineerInfo res = null;
+        // 결과 엔지니어가 여러명이라면 작업량으로 선별
+        System.out.println(sortEngineerNumList.size());
+        if (sortEngineerNumList.size() > 1) {
+            int maxIdx = 0;
+            int max = engineerInfoRepository.findWorkByNum(sortEngineerNumList.get(0));
+            for (int i = 1; i < sortEngineerNumList.size(); i++) {
+                int temp = engineerInfoRepository.findWorkByNum(sortEngineerNumList.get(i));
+                if (max < temp) {
+                    max = temp;
+                    maxIdx = i;
+                }
+            }
+            res = engineerInfoRepository.findByEngineerNum(sortEngineerNumList.get(maxIdx));
+        }
+        // 결과 1명 -> 엔지니어 배정
+        else {
+            res = engineerInfoRepository.findByEngineerNum(sortEngineerNumList.get(0));
+        }
+        return res;
+    }
+
+    // 엔지니어들의 거리, 방향성을 이용하여 최적 엔지니어 그룹을 판별
+    // 표준 편차에서 벗어난(유독 거리가 짧은) 엔지니어가 있다면 그 중 거리가 짧은 엔지니어
+    // 벗어난 엔지니어들이 없다면 엔지니어마다 거리가 비슷하다는 의미로 방향성 차이가 가장 적은 엔지니어
+    private List<Long> findOptimunEngineerGroup(List<sortElem> decideList) {
+        List<Long> sortEngineerNumList = new ArrayList<>();
+        System.out.println("현재 그룹내 엔지니어 수 " + decideList.size() );
+        Integer distMean = calcMean(decideList);
+        System.out.println("엔지니어와 고객 거리의 평균 : " + distMean);
+        double distDev = calcDev(decideList);
+        System.out.println("엔지니어와 고객 거리의 표준편차 : " + distDev);
+
+        // 비교적 거리가 먼 후보 제외
+        for (int i = 0; i < decideList.size(); i++) {
+            if (decideList.get(i).dist >= distMean + distDev) {
+                System.out.println("고객과 거리가 너무 멀어 배제되는 엔지니어 : " + decideList.get(i).num + "거리 : " +  decideList.get(i).dist);
+                decideList.remove(i);
+                System.out.println("현재 그룹내 엔지니어 수 " + decideList.size() );
+//                i=0;
+            }
+        }
+        System.out.println("거리상 배제후 남은 엔지니어의 수: " + decideList.size() );
+        List<sortElem> sortList = new ArrayList<>();
+        Integer minDistIdx = 0;
+        Integer minDirDiffIdx = 0;
+        for (int i = 0; i < decideList.size(); i++) {
+            if (decideList.get(i).dist <= distMean - distDev) {
+                System.out.println("거리가 너무 가까워 선별 가능성이 높은 엔지니어 : "+ decideList.get(i).num+", 거리 : "+ decideList.get(i).dist);
+                sortList.add(decideList.get(i));
+            }
+        }
+        System.out.println(sortList.size());
+        for(int i=0;i<sortList.size();i++) {
+            if (decideList.get(minDirDiffIdx).dirDiff > decideList.get(i).dirDiff)
+                minDirDiffIdx = i;
+            if (decideList.get(minDistIdx).dist > decideList.get(i).dist)
+                minDistIdx = i;
+        }
+        // 거리 유독 가까운 엔지니어 중에서 선발
+        if (sortList.size() > 0) {
+            System.out.println("거리가 너무 가까운 엔지니어 존재 ");
 
 
-        return distBetweenCustomerAndEach;
+            for (int i = 0; i < sortList.size(); i++) {
+                if (sortList.get(minDistIdx).dist == sortList.get(i).dist)
+                    sortEngineerNumList.add(sortList.get(i).num);
+            }
+        }
+        //거리가 비슷하여 방향성으로 선별
+        // 방향성 차이가 가장 적은 엔지니어 선별
+        else {
+            System.out.println("거리가 비슷하여 방향성 차이로 선별");
+            for (int i = 0; i < decideList.size(); i++) {
+                if (decideList.get(minDirDiffIdx).dirDiff == decideList.get(i).dirDiff)
+                    sortEngineerNumList.add(decideList.get(i).num);
+            }
+        }
+        return sortEngineerNumList;
+    }
+
+    private Integer calcMean(List<sortElem> decideList) {
+        Integer sum = 0;
+        for (int i = 0; i < decideList.size(); i++) {
+            sum += decideList.get(i).dist;
+        }
+        return (int) sum / decideList.size();
+    }
+
+    private Double calcDev(List<sortElem> decideList) {
+        double sum = 0.0;
+        double sd = 0.0;
+        double diff;
+        double meanValue = calcMean(decideList);
+        for (int i = 0; i < decideList.size(); i++) {
+            diff = decideList.get(i).dist - meanValue;
+            sum += diff * diff;
+        }
+        return Math.sqrt(sum / decideList.size());
+    }
+
+    Integer calcDirDiff(Coordinates before, Coordinates now, Coordinates after) {
+        Integer dir1 = calcDir(before, now);
+        Integer dir2 = calcDir(now, after);
+        Integer diff1 = Math.abs(dir1 - dir2);
+        return Math.min(diff1, 360 - diff1);
+    }
+
+    private Integer calcDir(Coordinates a, Coordinates b) {
+        double lat1_rad = convertDegreesToRadians(a.lat);
+        double lat2_rad = convertDegreesToRadians(b.lat);
+        double lon_diff_rad = convertDegreesToRadians(a.lon - b.lon);
+        double y = Math.sin(lon_diff_rad) * Math.cos(lat2_rad);
+        double x = Math.cos(lat1_rad) * Math.sin(lat2_rad) - Math.sin(lat1_rad) * Math.cos(lat2_rad) * Math.cos(lon_diff_rad);
+
+        return ((int) convertRadiansToDegrees(Math.atan2(y, x)) + 360) % 360;
     }
 
     // 직선거리 미터 반환
@@ -186,8 +378,8 @@ public class ScheduleServiceImpl implements ScheduleService {
         double radius = 6371;//지구 반지름
         double toRadian = Math.PI / 180; // 라디안 변환을 위해
 
-        double deltaLat = Math.abs(coordinates1.lat - coordinates2.lat) * toRadian;
-        double deltaLon = Math.abs(coordinates1.lon - coordinates2.lon) * toRadian;
+        double deltaLat = convertDegreesToRadians(Math.abs(coordinates1.lat - coordinates2.lat));
+        double deltaLon = convertDegreesToRadians(Math.abs(coordinates1.lon - coordinates2.lon));
 
         double sinDeltaLat = Math.sin(deltaLat / 2);
         double sinDeltaLon = Math.sin(deltaLon / 2);
@@ -198,6 +390,14 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         dist = 2 * radius * Math.asin(squareRoot);
         return Math.toIntExact(Math.round(dist * 1000));
+    }
+
+    private double convertDegreesToRadians(double deg) {
+        return (deg * Math.PI / 180);
+    }
+
+    private double convertRadiansToDegrees(double rad) {
+        return (rad * 180 / Math.PI);
     }
 
     // 지번 주소에 대해 좌표 계산

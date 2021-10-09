@@ -10,7 +10,7 @@ import java.util.Map;
 public interface ScheduleService {
     Map<String, Object> searchNearCenter(String address);
 
-    List<Integer> findOptimumEngineer(List<EngineerInfo> engineers, Integer distBetweenCustomerAndCenter, String dateTime, Coordinates customerCoor);
+    EngineerInfo findOptimumEngineer(List<EngineerInfo> engineers, Coordinates distBetweenCustomerAndCenter, String dateTime, Coordinates customerCoor);
 
     public class Coordinates {
         Double lon; //경도

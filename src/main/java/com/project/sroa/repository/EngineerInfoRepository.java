@@ -30,7 +30,6 @@ public interface EngineerInfoRepository extends JpaRepository<EngineerInfo,Long>
     @Query(nativeQuery = true, value="SELECT e.* FROM engineer_info e WHERE e.center_num =?1 AND e.engineer_num NOT IN (SELECT s.engineer_num FROM schedule s WHERE s.start_date like concat('%', ?2, '%'))")
     List<EngineerInfo> findAllPossibleEngineerByDate(Long centerNum, String date);
 
-
-
-
+    @Query("SELECT e.amountOfWork FROM EngineerInfo e WHERE e.engineerNum=?1")
+    int findWorkByNum(Long aLong);
 }

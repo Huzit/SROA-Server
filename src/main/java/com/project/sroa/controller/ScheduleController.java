@@ -40,7 +40,7 @@ public class ScheduleController {
 
     @PostMapping("/schedule/allocateEngineer")
 //    public Boolean allocateEngineer(@RequestBody RequestBooking body){
-    public List<Integer> allocateEngineer(@RequestBody RequestBooking body){
+    public EngineerInfo allocateEngineer(@RequestBody RequestBooking body){
         //고객 주소와 가까운 서비스 센터와 거리 찾기
         Map<String, Object> closeCenter = scheduleService.searchNearCenter(body.getAddress());
 
@@ -49,9 +49,12 @@ public class ScheduleController {
         Map<String, Object> noScheduleEngineers = scheduleService.noScheduleEngineerAtTime(body.getDateTime(), (ServiceCenter) closeCenter.get("center"));
         List<EngineerInfo> engineers = (List<EngineerInfo>) noScheduleEngineers.get(body.getDateTime());
 
-        return scheduleService.findOptimumEngineer(engineers, (Integer) closeCenter.get("distance"), body.getDateTime(), (ScheduleService.Coordinates) closeCenter.get("customerCoor"));
+        EngineerInfo engineerInfo=scheduleService.findOptimumEngineer(engineers,
+                (ScheduleService.Coordinates) closeCenter.get("centerCoor"), body.getDateTime(),
+                (ScheduleService.Coordinates) closeCenter.get("customerCoor"));
 
-//        return true;
+        //해당 엔지니어에 일정 부여
+        return engineerInfo;
     }
 
 }
