@@ -21,6 +21,10 @@ public interface ScheduleRepository extends JpaRepository<Schedule,Long> {
 //    List<Schedule> findAllByEngineerInfoAndStatusAndStartDateContains(Long e, Integer status, String date);
 
 
+    // 엔지니어의 날짜의 일정
+    @Query(nativeQuery = true, value="SELECT s.* FROM schedule s WHERE s.start_date like concat('%', ?2, '%') AND s.engineer_num= (SELECT e.engineer_num FROM engineer_info e WHERE e.engineer_num=?1) ORDER BY s.start_date ASC")
+    List<Schedule> findAllScheduleTimeByEngineerNumAndDate(Long engineerNum, String date);
+
     @Transactional
     @Modifying
     @Query("UPDATE Schedule s SET s.status=?2 WHERE s.scheduleNum=?1")

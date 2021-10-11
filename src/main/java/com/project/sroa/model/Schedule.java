@@ -14,6 +14,7 @@ public class Schedule {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Integer status;
+    private String address;
 
     @OneToOne
     @JoinColumn(name="productNum")

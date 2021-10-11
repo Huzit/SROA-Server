@@ -10,5 +10,5 @@ public class SignupEngineer {
     public String name;
     public String address;
     public String phoneNum;
-    private String workingArea;
+    private String centerName;
 }
