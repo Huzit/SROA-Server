@@ -1,9 +1,11 @@
 package com.project.sroa.service;
 
 import com.project.sroa.model.EngineerInfo;
+import com.project.sroa.model.Product;
 import com.project.sroa.model.Schedule;
 import com.project.sroa.model.ServiceCenter;
 import com.project.sroa.repository.EngineerInfoRepository;
+import com.project.sroa.repository.ProductRepository;
 import com.project.sroa.repository.ScheduleRepository;
 import com.project.sroa.repository.ServiceCenterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,14 +49,17 @@ public class ScheduleServiceImpl implements ScheduleService {
     ServiceCenterRepository serviceCenterRepository;
     EngineerInfoRepository engineerInfoRepository;
     ScheduleRepository scheduleRepository;
+    ProductRepository productRepository;
 
     @Autowired
     public ScheduleServiceImpl(ServiceCenterRepository serviceCenterRepository,
                                EngineerInfoRepository engineerInfoRepository,
-                               ScheduleRepository scheduleRepository) {
+                               ScheduleRepository scheduleRepository,
+                               ProductRepository productRepository) {
         this.serviceCenterRepository = serviceCenterRepository;
         this.engineerInfoRepository = engineerInfoRepository;
         this.scheduleRepository = scheduleRepository;
+        this.productRepository=productRepository;
     }
 
     //날짜와 가장 가까운 서비스 센터가 주어졌을때 시간대 마다 가능한 엔지니어가 있는지를 조회
@@ -169,7 +174,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     // 날짜 + 시간에 활동 가능한 엔지니어 중 최적의 엔지니어 탐색
     // 현재 거리 계산을 평균에서 일정 -> 일정으로만 변경해야함
     @Override
-    public EngineerInfo findOptimumEngineer(List<EngineerInfo> engineers, Coordinates centerCoor, String dateTime, Coordinates customerCoor) {
+    public List<Long> findInfoForOptimum(List<EngineerInfo> engineers, Coordinates centerCoor, String dateTime, Coordinates customerCoor) {
         List<sortElem> decideList = new ArrayList<>();
         List<Long> sortEngineerNumList = new ArrayList<>();
 
@@ -267,13 +272,36 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
         System.out.println("---------------------------------------");
         // 엔지너어들의 거리, 방향성을 이용하여 1차 선별
-        sortEngineerNumList = findOptimunEngineerGroup(decideList);
-        // 선별된 엔지니어가 여러명일수 있기때문에 작업량으로 최종 선별
-        return findSmallestWorkEngineer(sortEngineerNumList);
+        return findOptimunEngineers(decideList);
+    }
+
+    @Override
+    public Product storeProductForReserve(String classifyName, String content) {
+        Product product=Product.builder()
+                .classifyName(classifyName)
+                .problem(content)
+                .build();
+
+        return productRepository.save(product);
+    }
+
+    @Override
+    public void allocateSchedule(EngineerInfo engineerInfo, Product product,
+                                 String dateTime, String userId, String customerName,
+                                 String phoneNum, String address){
+//        Schedule schedule = Schedule.builder()
+//                .product(product)
+//                .engineerInfo(engineerInfo)
+//                .startDate(dateTime)
+//                .customerName(customerName)
+//                .phoneNum(phoneNum)
+//                .address(address)
+//                .build();
     }
 
     // findOptimunEngineerGroup의 함수의 결과가 여러명일 수 있기 때문에 작업량이 적은 엔지니어를 선별
-    private EngineerInfo findSmallestWorkEngineer(List<Long> sortEngineerNumList) {
+    @Override
+    public EngineerInfo findSmallestWorkEngineerAmongOptimum(List<Long> sortEngineerNumList) {
         System.out.println("최종 선별 후 엔지니어 수 : " + sortEngineerNumList.size());
         EngineerInfo res = null;
 
@@ -301,7 +329,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     // 엔지니어들의 거리, 방향성을 이용하여 최적 엔지니어 그룹을 판별
     // 표준 편차에서 벗어난(유독 거리가 짧은) 엔지니어가 있다면 그 중 거리가 짧은 엔지니어
     // 벗어난 엔지니어들이 없다면 엔지니어마다 거리가 비슷하다는 의미로 방향성 차이가 가장 적은 엔지니어
-    private List<Long> findOptimunEngineerGroup(List<sortElem> decideList) {
+    private List<Long> findOptimunEngineers(List<sortElem> decideList) {
         List<Long> sortEngineerNumList = new ArrayList<>();
         System.out.println("현재 그룹내 엔지니어 수 " + decideList.size());
         Integer distMean = calcMean(decideList);

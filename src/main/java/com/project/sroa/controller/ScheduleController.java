@@ -2,6 +2,7 @@ package com.project.sroa.controller;
 
 import com.project.sroa.dto.RequestBooking;
 import com.project.sroa.model.EngineerInfo;
+import com.project.sroa.model.Product;
 import com.project.sroa.model.ServiceCenter;
 import com.project.sroa.repository.UserInfoRepository;
 import com.project.sroa.service.ScheduleService;
@@ -49,11 +50,16 @@ public class ScheduleController {
         Map<String, Object> noScheduleEngineers = scheduleService.noScheduleEngineerAtTime(form.getDateTime(), (ServiceCenter) closeCenter.get("center"));
         List<EngineerInfo> engineers = (List<EngineerInfo>) noScheduleEngineers.get(form.getDateTime());
 
-        EngineerInfo engineerInfo = scheduleService.findOptimumEngineer(engineers,
+
+        List<Long> sortEngineerNumList = scheduleService.findInfoForOptimum(engineers,
                 (ScheduleService.Coordinates) closeCenter.get("centerCoor"), form.getDateTime(),
                 (ScheduleService.Coordinates) closeCenter.get("customerCoor"));
 
+        // 선별된 엔지니어가 여러명일수 있기때문에 작업량으로 최종 선별
+        EngineerInfo engineerInfo =scheduleService.findSmallestWorkEngineerAmongOptimum(sortEngineerNumList);
         //해당 엔지니어에 일정 부여
+        Product product = scheduleService.storeProductForReserve(form.getClassifyName(), form.getContent());
+        scheduleService.allocateSchedule(engineerInfo, product, form.getDateTime(), form.getUserId(), form.getCustomerName(), form.getPhoneNum(), form.getAddress());
         return engineerInfo;
     }
 
