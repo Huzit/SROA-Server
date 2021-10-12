@@ -13,27 +13,46 @@ public class AccountController {
     private AccountService accountService;
 
     @Autowired
-    public AccountController(AccountService accountService){
-        this.accountService=accountService;
+    public AccountController(AccountService accountService) {
+        this.accountService = accountService;
     }
 
     // 고객 회원가입
     @PostMapping("/account/customer/singup")
-    public boolean userSignup(@RequestBody UserInfo userInfo){
-        return  accountService.createNewUser(userInfo);
+    public boolean userSignup(@RequestBody UserInfo userInfo) {
+        if (!accountService.checkDuplicateId(userInfo.getId())) {
+            return false;
+        }
+
+        return accountService.createNewUser(userInfo);
     }
 
     // 엔지니어 회원가입
     @PostMapping("/account/engineer/singup")
-    public boolean engineerSignup(@RequestBody SignupEngineer info){
+    public boolean engineerSignup(@RequestBody SignupEngineer form) {
+        if (!accountService.checkDuplicateEmp(form.getEmpNum())) {
+            return false;
+        }
 
-        return accountService.createNewEngineer(info);
+        if (!accountService.checkDuplicateId(form.getId())) {
+            return false;
+        }
+
+        UserInfo userInfo = UserInfo.builder()
+                .id(form.getId())
+                .pw(form.getPw())
+                .address(form.getAddress())
+                .name(form.getName())
+                .phoneNum(form.getPhoneNum())
+                .build();
+
+        return accountService.createNewEngineer(userInfo, form.getCenterName(), form.getEmpNum());
     }
+
 
     // 고객, 엔지니어 로그인
     @GetMapping("/account/login/{ID}/{PW}")
-    public boolean login(@PathVariable("ID") String id, @PathVariable("PW") String pw){
-
+    public boolean login(@PathVariable("ID") String id, @PathVariable("PW") String pw) {
         return accountService.login(id, pw);
     }
 }

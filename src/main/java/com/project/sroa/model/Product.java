@@ -8,7 +8,7 @@ import javax.persistence.Id;
 @Entity
 public class Product {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long productNum;
     private String classifyName;
     private String problem;

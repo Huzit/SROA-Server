@@ -23,6 +23,6 @@ public interface ScheduleService {
     }
 
     Map<String, Object> noScheduleEngineerAtTime(String date, ServiceCenter serviceCenter);
+
     List<Boolean> searchAvailableTime(String date, Map<String, Object> closeCenter);
-//    List<Boolean> searchAvailableTime(LocalDateTime date, String address);
 }

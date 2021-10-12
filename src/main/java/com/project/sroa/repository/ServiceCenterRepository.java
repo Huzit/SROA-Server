@@ -10,12 +10,11 @@ import java.util.List;
 
 public interface ServiceCenterRepository extends JpaRepository<ServiceCenter, Long> {
     ServiceCenter findByCenterName(String centerName);
+
     List<ServiceCenter> findByAddressContaining(String rootAddress);
 
     @Transactional
     @Modifying
     @Query("UPDATE ServiceCenter s SET s.latitude=?1, s.longitude=?2 WHERE s.centerNum=?3")
-    void updatePos(Double lat, Double lon,  Long centerNum);
-
-    ServiceCenter findByCenterNum(Long centerNum);
+    void updatePos(Double lat, Double lon, Long centerNum);
 }

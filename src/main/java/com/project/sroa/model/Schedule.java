@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 public class Schedule {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long scheduleNum;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
@@ -19,14 +19,14 @@ public class Schedule {
     private String phoneNum;
 
     @OneToOne
-    @JoinColumn(name="productNum")
+    @JoinColumn(name = "productNum")
     private Product product;
 
     @ManyToOne
-    @JoinColumn(name="userNum")
+    @JoinColumn(name = "userNum")
     private UserInfo userInfo;
 
     @ManyToOne
-    @JoinColumn(name="engineerNum")
+    @JoinColumn(name = "engineerNum")
     private EngineerInfo engineerInfo;
 }

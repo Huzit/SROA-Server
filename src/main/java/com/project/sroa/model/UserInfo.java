@@ -14,7 +14,7 @@ import javax.persistence.Id;
 @NoArgsConstructor
 public class UserInfo {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long userNum;
 
     private String id;
@@ -25,12 +25,12 @@ public class UserInfo {
     private Integer code;
 
     @Builder
-    public UserInfo(String id, String pw, String name, String address, String phoneNum){
-        this.id=id;
-        this.pw=pw;
-        this.name=name;
-        this.address=address;
-        this.phoneNum=phoneNum;
+    public UserInfo(String id, String pw, String name, String address, String phoneNum) {
+        this.id = id;
+        this.pw = pw;
+        this.name = name;
+        this.address = address;
+        this.phoneNum = phoneNum;
     }
 
 
