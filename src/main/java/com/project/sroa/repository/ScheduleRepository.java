@@ -36,5 +36,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     @Query("UPDATE Schedule s SET s.endDate=?2 WHERE s.scheduleNum=?1")
     void updateEndDate(Long scheduleNum, Timestamp valueOf);
 
-
+    @Query(nativeQuery = true, value = "SELECT s.* FROM Schedule s WHERE s.start_date like concat('%', ?2, '%') AND s.engineer_num=?1")
+    List<Schedule> findAllByEngineerInfoAndDateTime(Long engineerNum, String dateTime);
 }

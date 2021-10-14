@@ -1,13 +1,7 @@
 package com.project.sroa.service;
 
-import com.project.sroa.model.EngineerInfo;
-import com.project.sroa.model.Product;
-import com.project.sroa.model.Schedule;
-import com.project.sroa.model.ServiceCenter;
-import com.project.sroa.repository.EngineerInfoRepository;
-import com.project.sroa.repository.ProductRepository;
-import com.project.sroa.repository.ScheduleRepository;
-import com.project.sroa.repository.ServiceCenterRepository;
+import com.project.sroa.model.*;
+import com.project.sroa.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.boot.json.JsonParserFactory;
@@ -21,6 +15,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,16 +46,19 @@ public class ScheduleServiceImpl implements ScheduleService {
     EngineerInfoRepository engineerInfoRepository;
     ScheduleRepository scheduleRepository;
     ProductRepository productRepository;
+    UserInfoRepository userInfoRepository;
 
     @Autowired
     public ScheduleServiceImpl(ServiceCenterRepository serviceCenterRepository,
                                EngineerInfoRepository engineerInfoRepository,
                                ScheduleRepository scheduleRepository,
-                               ProductRepository productRepository) {
+                               ProductRepository productRepository,
+                               UserInfoRepository userInfoRepository) {
         this.serviceCenterRepository = serviceCenterRepository;
         this.engineerInfoRepository = engineerInfoRepository;
         this.scheduleRepository = scheduleRepository;
         this.productRepository=productRepository;
+        this.userInfoRepository=userInfoRepository;
     }
 
     //날짜와 가장 가까운 서비스 센터가 주어졌을때 시간대 마다 가능한 엔지니어가 있는지를 조회
@@ -289,14 +288,17 @@ public class ScheduleServiceImpl implements ScheduleService {
     public void allocateSchedule(EngineerInfo engineerInfo, Product product,
                                  String dateTime, String userId, String customerName,
                                  String phoneNum, String address){
-//        Schedule schedule = Schedule.builder()
-//                .product(product)
-//                .engineerInfo(engineerInfo)
-//                .startDate(dateTime)
-//                .customerName(customerName)
-//                .phoneNum(phoneNum)
-//                .address(address)
-//                .build();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        UserInfo userInfo=userInfoRepository.findById(userId);
+        Schedule schedule = Schedule.builder()
+                .product(product)
+                .engineerInfo(engineerInfo)
+                .startDate(LocalDateTime.parse(dateTime, formatter))
+                .customerName(customerName)
+                .phoneNum(phoneNum)
+                .address(address)
+                .userInfo(userInfo)
+                .build();
     }
 
     // findOptimunEngineerGroup의 함수의 결과가 여러명일 수 있기 때문에 작업량이 적은 엔지니어를 선별
