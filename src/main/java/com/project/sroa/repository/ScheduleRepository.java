@@ -8,10 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 
 import javax.transaction.Transactional;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.List;
 
-public interface ScheduleRepository extends JpaRepository<Schedule,Long> {
+public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     @Query("SELECT s FROM Schedule s WHERE s.engineerInfo=?1 AND s.status=?2")
     List<Schedule> findAllByEngineerInfoAndStatus(EngineerInfo engineerInfo, Integer status);
@@ -22,7 +21,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule,Long> {
 
 
     // 엔지니어의 날짜의 일정
-    @Query(nativeQuery = true, value="SELECT s.* FROM schedule s WHERE s.start_date like concat('%', ?2, '%') AND s.engineer_num= (SELECT e.engineer_num FROM engineer_info e WHERE e.engineer_num=?1) ORDER BY s.start_date ASC")
+    @Query(nativeQuery = true, value = "SELECT s.* FROM schedule s WHERE s.start_date like concat('%', ?2, '%') AND s.engineer_num= (SELECT e.engineer_num FROM engineer_info e WHERE e.engineer_num=?1) ORDER BY s.start_date ASC")
     List<Schedule> findAllScheduleTimeByEngineerNumAndDate(Long engineerNum, String date);
 
     @Transactional
@@ -35,7 +34,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule,Long> {
     @Transactional
     @Modifying
     @Query("UPDATE Schedule s SET s.endDate=?2 WHERE s.scheduleNum=?1")
-    void updateEndDate(Long scheduleNum ,Timestamp valueOf);
+    void updateEndDate(Long scheduleNum, Timestamp valueOf);
 
-
+    @Query(nativeQuery = true, value = "SELECT s.* FROM Schedule s WHERE s.start_date like concat('%', ?2, '%') AND s.engineer_num=?1")
+    List<Schedule> findAllByEngineerInfoAndDateTime(Long engineerNum, String dateTime);
 }

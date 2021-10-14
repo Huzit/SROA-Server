@@ -2,6 +2,7 @@ package com.project.sroa.controller;
 
 import com.project.sroa.dto.RequestBooking;
 import com.project.sroa.model.EngineerInfo;
+import com.project.sroa.model.Product;
 import com.project.sroa.model.ServiceCenter;
 import com.project.sroa.repository.UserInfoRepository;
 import com.project.sroa.service.ScheduleService;
@@ -24,7 +25,7 @@ public class ScheduleController {
     public ScheduleController(ScheduleService scheduleService,
                               UserInfoRepository userInfoRepository) {
         this.scheduleService = scheduleService;
-        this.userInfoRepository=userInfoRepository;
+        this.userInfoRepository = userInfoRepository;
     }
 
     // 고객 날짜 선택시 예약 가능 현황 조회
@@ -40,20 +41,25 @@ public class ScheduleController {
 
     @PostMapping("/schedule/allocateEngineer")
 //    public Boolean allocateEngineer(@RequestBody RequestBooking body){
-    public EngineerInfo allocateEngineer(@RequestBody RequestBooking body){
+    public EngineerInfo allocateEngineer(@RequestBody RequestBooking form) {
         //고객 주소와 가까운 서비스 센터와 거리 찾기
-        Map<String, Object> closeCenter = scheduleService.searchNearCenter(body.getAddress());
+        Map<String, Object> closeCenter = scheduleService.searchNearCenter(form.getAddress());
 
 
         // 고객이 기입한 날짜 +  시간에 일정이 없는 엔지니어 조회
-        Map<String, Object> noScheduleEngineers = scheduleService.noScheduleEngineerAtTime(body.getDateTime(), (ServiceCenter) closeCenter.get("center"));
-        List<EngineerInfo> engineers = (List<EngineerInfo>) noScheduleEngineers.get(body.getDateTime());
+        Map<String, Object> noScheduleEngineers = scheduleService.noScheduleEngineerAtTime(form.getDateTime(), (ServiceCenter) closeCenter.get("center"));
+        List<EngineerInfo> engineers = (List<EngineerInfo>) noScheduleEngineers.get(form.getDateTime());
 
-        EngineerInfo engineerInfo=scheduleService.findOptimumEngineer(engineers,
-                (ScheduleService.Coordinates) closeCenter.get("centerCoor"), body.getDateTime(),
+
+        List<Long> sortEngineerNumList = scheduleService.findInfoForOptimum(engineers,
+                (ScheduleService.Coordinates) closeCenter.get("centerCoor"), form.getDateTime(),
                 (ScheduleService.Coordinates) closeCenter.get("customerCoor"));
 
+        // 선별된 엔지니어가 여러명일수 있기때문에 작업량으로 최종 선별
+        EngineerInfo engineerInfo =scheduleService.findSmallestWorkEngineerAmongOptimum(sortEngineerNumList);
         //해당 엔지니어에 일정 부여
+        Product product = scheduleService.storeProductForReserve(form.getClassifyName(), form.getContent());
+        scheduleService.allocateSchedule(engineerInfo, product, form.getDateTime(), form.getUserId(), form.getCustomerName(), form.getPhoneNum(), form.getAddress());
         return engineerInfo;
     }
 

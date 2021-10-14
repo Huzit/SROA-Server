@@ -12,21 +12,21 @@ import java.sql.Timestamp;
 @Getter
 public class Evaluation {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long evaluationNum;
     private Timestamp writeDate;
     private String content;
     private Integer score;
 
     @OneToOne
-    @JoinColumn(name="scheduleNum")
+    @JoinColumn(name = "scheduleNum")
     private Schedule schedule;
 
     @Builder
-    public Evaluation(Timestamp writeDate, String content, Integer score, Schedule schedule){
-        this.writeDate=writeDate;
-        this.content=content;
-        this.score=score;
-        this.schedule=schedule;
+    public Evaluation(Timestamp writeDate, String content, Integer score, Schedule schedule) {
+        this.writeDate = writeDate;
+        this.content = content;
+        this.score = score;
+        this.schedule = schedule;
     }
 }

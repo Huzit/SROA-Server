@@ -11,7 +11,7 @@ import javax.persistence.Id;
 @Data
 public class ServiceCenter {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long centerNum;
     private String centerName;
     private String address;

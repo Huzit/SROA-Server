@@ -1,6 +1,5 @@
 package com.project.sroa.service;
 
-import com.project.sroa.dto.ScheduleHandling;
 import com.project.sroa.model.Schedule;
 import com.project.sroa.repository.EngineerInfoRepository;
 import com.project.sroa.repository.ScheduleRepository;
@@ -18,22 +17,23 @@ public class RepairServiceImpl implements RepairService {
 
     @Autowired
     public RepairServiceImpl(ScheduleRepository scheduleRepository,
-                             EngineerInfoRepository engineerInfoRepository){
-        this.scheduleRepository=scheduleRepository;
-        this.engineerInfoRepository=engineerInfoRepository;
+                             EngineerInfoRepository engineerInfoRepository) {
+        this.scheduleRepository = scheduleRepository;
+        this.engineerInfoRepository = engineerInfoRepository;
     }
 
     @Override
-    public void updateState(ScheduleHandling form) {
-        Schedule schedule = scheduleRepository.findByScheduleNum(form.getScheduleNum());
-        if(form.getStatus().equals(1) && schedule.getStatus().equals(2)){
-            System.out.println("처리완료 처리 : 입고되어 수리가 완료되지 않음");
-            return;
-        }
-        if(form.getStatus().equals(1)){
+    public Schedule searchSchedule(Long scheduleNum) {
+        return scheduleRepository.findByScheduleNum(scheduleNum);
+    }
+
+    @Override
+    public boolean updateState(Schedule schedule, Integer state) {
+        if (state == 1) {
             scheduleRepository.updateEndDate(schedule.getScheduleNum(), Timestamp.valueOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))));
             engineerInfoRepository.updateEngineerAmountOfWork(schedule.getEngineerInfo().getEngineerNum());
         }
-        scheduleRepository.updateStatus(form.getScheduleNum(), form.getStatus());
+        scheduleRepository.updateStatus(schedule.getScheduleNum(), state);
+        return true;
     }
 }
