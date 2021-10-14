@@ -7,7 +7,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -21,18 +20,19 @@ public class MapController {
     }
 
     @GetMapping("/map/{dateTime}/{serviceCenter}")
-    public String drawMap(@PathVariable("dateTime") String dateTime, @PathVariable("serviceCenter") Long centerNum) {
+    public Map<Long, Object> drawMap(@PathVariable("dateTime") String dateTime, @PathVariable("serviceCenter") Long centerNum) {
         List<EngineerInfo> list = mapService.searchEngineerAtCenter(centerNum);
         Map<Long, Object> map = mapService.findScheduleAtTime(list, dateTime);
         Map<String, Object> infoMap = null;
-        for (int i = 0; i < list.size(); i++) {
-            Long engineerNum = list.get(i).getEngineerNum();
-            infoMap= (Map<String, Object>) map.get(engineerNum);
-            List<LocalDateTime> timeList= (List<LocalDateTime>) map.get("time");
-            List<MapService.Coordinates> coorList= (List<MapService.Coordinates>) map.get("coor");
-        }
+//        for (int i = 0; i < list.size(); i++) {
+//            Long engineerNum = list.get(i).getEngineerNum();
+//            infoMap= (Map<String, Object>) map.get(engineerNum);
+////            List<LocalDateTime> timeList= (List<LocalDateTime>) map.get("time");
+////            List<MapService.Coordinates> coorList= (List<MapService.Coordinates>) map.get("coor");
+//
+//        }
 
-        return null;
+        return map;
     }
 
 

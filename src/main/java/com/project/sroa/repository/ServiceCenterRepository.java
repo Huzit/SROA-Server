@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface ServiceCenterRepository extends JpaRepository<ServiceCenter, Long> {
     ServiceCenter findByCenterName(String centerName);
-
+    ServiceCenter findByCenterNum(Long num);
     List<ServiceCenter> findByAddressContaining(String rootAddress);
 
     @Transactional
