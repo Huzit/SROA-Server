@@ -17,5 +17,5 @@ public interface MapService {
     }
     List<EngineerInfo> searchEngineerAtCenter(Long centerNum);
 
-    Map<Long, Object> findScheduleAtTime(List<EngineerInfo> list, String dateTime);
+    Map<String, Object> findScheduleAtTime(List<EngineerInfo> list, String dateTime);
 }
