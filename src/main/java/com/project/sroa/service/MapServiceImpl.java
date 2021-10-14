@@ -2,7 +2,6 @@ package com.project.sroa.service;
 
 import com.project.sroa.model.EngineerInfo;
 import com.project.sroa.model.Schedule;
-import com.project.sroa.model.ServiceCenter;
 import com.project.sroa.repository.EngineerInfoRepository;
 import com.project.sroa.repository.ScheduleRepository;
 import com.project.sroa.repository.ServiceCenterRepository;
@@ -18,8 +17,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,12 +29,12 @@ public class MapServiceImpl implements MapService {
     EngineerInfoRepository engineerInfoRepository;
     ServiceCenterRepository serviceCenterRepository;
 
-    public  MapServiceImpl(EngineerInfoRepository engineerInfoRepository,
-                           ScheduleRepository scheduleRepository,
-                           ServiceCenterRepository serviceCenterRepository){
-        this.engineerInfoRepository=engineerInfoRepository;
-        this.scheduleRepository=scheduleRepository;
-        this.serviceCenterRepository=serviceCenterRepository;
+    public MapServiceImpl(EngineerInfoRepository engineerInfoRepository,
+                          ScheduleRepository scheduleRepository,
+                          ServiceCenterRepository serviceCenterRepository) {
+        this.engineerInfoRepository = engineerInfoRepository;
+        this.scheduleRepository = scheduleRepository;
+        this.serviceCenterRepository = serviceCenterRepository;
     }
 
     @Override
@@ -44,23 +43,32 @@ public class MapServiceImpl implements MapService {
     }
 
     // 엔지니어 번호, 시간, 좌표표
-   @Override
-    public Map<Long, Object> findScheduleAtTime(List<EngineerInfo> list, String dateTime) {
-        Map<Long, Object> map = null;
-        Map<String, Object> info=null;
-        for(EngineerInfo engineer:list){
+    @Override
+    public Map<String, Object> findScheduleAtTime(List<EngineerInfo> list, String dateTime) {
+        Map<String, Object> map = new HashMap<>();
+        List<String> timeList=new ArrayList<>();
+        List<Double> yList=new ArrayList<>();
+        List<Double> xList=new ArrayList<>();
+
+        for (EngineerInfo engineer : list) {
+            System.out.println(engineer.getEngineerNum() + "번 엔지니어");
             List<Schedule> schedules = scheduleRepository.findAllByEngineerInfoAndDateTime(engineer.getEngineerNum(), dateTime);
-            List<Coordinates> coordinateList= new ArrayList<>();
-            List<LocalDateTime> timeList=new ArrayList<>();
-            for(Schedule schedule:schedules){
-                timeList.add(schedule.getStartDate());
-                Coordinates coordinates=findCoordinates(schedule.getAddress());
-                coordinateList.add(coordinates);
+            System.out.println("당일 일정 수 : " + schedules.size());
+            if(schedules.size()==0)continue;
+
+
+            for (Schedule schedule : schedules) {
+                timeList.add(engineer.getEngineerNum().toString()+"번 엔지니어 " + schedule.getStartDate().toString());
+
+                Coordinates coordinates = findCoordinates(schedule.getAddress());
+                yList.add(coordinates.lat);
+                xList.add(coordinates.lon);
             }
-            info.put("coor", coordinateList);
-            info.put("time", timeList);
-            map.put(engineer.getEngineerNum(), info);
         }
+        map.put("y", yList);
+        map.put("x",xList);
+        map.put("test", timeList);
+
         return map;
     }
 
