@@ -2,8 +2,10 @@ package com.project.sroa.service;
 
 import com.project.sroa.model.EngineerInfo;
 import com.project.sroa.model.Schedule;
+import com.project.sroa.model.ServiceCenter;
 import com.project.sroa.repository.EngineerInfoRepository;
 import com.project.sroa.repository.ScheduleRepository;
+import com.project.sroa.repository.ServiceCenterRepository;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.stereotype.Service;
@@ -24,18 +26,21 @@ import java.util.Map;
 @Service
 public class MapServiceImpl implements MapService {
     String apiKey = "553DD31F-7E58-3853-8B42-951509B85AAF";
-    EngineerInfoRepository engineerInfoRepository;
     ScheduleRepository scheduleRepository;
+    EngineerInfoRepository engineerInfoRepository;
+    ServiceCenterRepository serviceCenterRepository;
 
     public  MapServiceImpl(EngineerInfoRepository engineerInfoRepository,
-                           ScheduleRepository scheduleRepository){
+                           ScheduleRepository scheduleRepository,
+                           ServiceCenterRepository serviceCenterRepository){
         this.engineerInfoRepository=engineerInfoRepository;
         this.scheduleRepository=scheduleRepository;
+        this.serviceCenterRepository=serviceCenterRepository;
     }
 
     @Override
     public List<EngineerInfo> searchEngineerAtCenter(Long centerNum) {
-        return engineerInfoRepository.findAllByServiceCenterNum(centerNum);
+        return engineerInfoRepository.findAllByServiceCenter(serviceCenterRepository.findByCenterNum(centerNum));
     }
 
     // 엔지니어 번호, 시간, 좌표표

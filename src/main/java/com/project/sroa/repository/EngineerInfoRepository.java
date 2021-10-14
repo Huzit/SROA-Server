@@ -35,5 +35,6 @@ public interface EngineerInfoRepository extends JpaRepository<EngineerInfo, Long
     int findWorkByNum(Long aLong);
 
     // for test
-    List<EngineerInfo> findAllByServiceCenterNum(Long centerNum);
+    @Query("SELECT e FROM EngineerInfo e WHERE e.serviceCenter=?1 ")
+    List<EngineerInfo> findAllByServiceCenter(ServiceCenter center);
 }
