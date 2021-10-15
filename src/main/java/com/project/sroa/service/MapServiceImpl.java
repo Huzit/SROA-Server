@@ -2,6 +2,7 @@ package com.project.sroa.service;
 
 import com.project.sroa.model.EngineerInfo;
 import com.project.sroa.model.Schedule;
+import com.project.sroa.model.ServiceCenter;
 import com.project.sroa.repository.EngineerInfoRepository;
 import com.project.sroa.repository.ScheduleRepository;
 import com.project.sroa.repository.ServiceCenterRepository;
@@ -41,16 +42,23 @@ public class MapServiceImpl implements MapService {
     public List<EngineerInfo> searchEngineerAtCenter(Long centerNum) {
         return engineerInfoRepository.findAllByServiceCenter(serviceCenterRepository.findByCenterNum(centerNum));
     }
+    @Override
+    public ServiceCenter searchCenterPos(Long centerNum){
+        ServiceCenter center= serviceCenterRepository.findByCenterNum(centerNum);
+        return center;
+    }
 
     // 엔지니어 번호, 시간, 좌표표
     @Override
-    public Map<String, Object> findScheduleAtTime(List<EngineerInfo> list, String dateTime) {
-        Map<String, Object> map = new HashMap<>();
+    public List<Object> findScheduleAtTime(List<EngineerInfo> list, String dateTime) {
+        Map<String, Object> map = null;
+        List<Object> resList=new ArrayList<>();
         List<String> timeList=new ArrayList<>();
         List<Double> yList=new ArrayList<>();
         List<Double> xList=new ArrayList<>();
 
         for (EngineerInfo engineer : list) {
+
             System.out.println(engineer.getEngineerNum() + "번 엔지니어");
             List<Schedule> schedules = scheduleRepository.findAllByEngineerInfoAndDateTime(engineer.getEngineerNum(), dateTime);
             System.out.println("당일 일정 수 : " + schedules.size());
@@ -58,18 +66,18 @@ public class MapServiceImpl implements MapService {
 
 
             for (Schedule schedule : schedules) {
-                timeList.add(engineer.getEngineerNum().toString()+"번 엔지니어 " + schedule.getStartDate().toString());
-
+                map = new HashMap<>();
                 Coordinates coordinates = findCoordinates(schedule.getAddress());
-                yList.add(coordinates.lat);
-                xList.add(coordinates.lon);
+                map.put("y", coordinates.lat);
+                map.put("x",coordinates.lon);
+                map.put("text", engineer.getEngineerNum().toString()+"번 엔지니어 " + schedule.getStartDate().toString().split("T")[1]);
+                resList.add(map);
             }
-        }
-        map.put("y", yList);
-        map.put("x",xList);
-        map.put("test", timeList);
 
-        return map;
+        }
+
+
+        return resList;
     }
 
     private Coordinates findCoordinates(String customerAddress) {
