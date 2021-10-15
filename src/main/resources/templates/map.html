@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout">
+<head>
+    <style>
+        .customoverlay {position:relative;bottom:35px;border-radius:6px;border: 1px solid #ccc;border-bottom:2px solid #ddd;float:left;}
+        .customoverlay:nth-of-type(n) {border:0; box-shadow:0px 1px 2px #888;}
+        .customoverlay .title {display:block;text-align:center;background:#fff;margin-right:35px;padding:10px 15px;font-size:14px;font-weight:bold;}
+        .customoverlay:after {content:'';position:absolute;margin-left:-12px;left:50%;bottom:-12px;width:22px;height:12px;background:url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')}
+
+    </style>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.0.min.js"></script>
+    <script type="text/javascript"
+            src="//dapi.kakao.com/v2/maps/sdk.js?appkey=663adc7f324cf8519cdef5b460db081a"></script>
+    <script>
+        var dateTime = "[[${dateTime}]]";
+        var lat= "[[${lat}]]";
+        var lon= "[[${lon}]]";
+        var data=[];
+        var positions=[];
+        var centerNum = "[[${centerNum}]]";
+        $.ajax({
+            type: "POST",
+            url: "/map",
+            dataType: "json",
+            async: false,
+            data: {"dateTime": dateTime, "serviceCenter": centerNum},
+            success:function (res){
+                data=res;
+            },
+            error:function (error){
+                alert("에러");
+            }
+        })
+        for(let i=0;i<data.length;i++){
+            var obj={};
+            obj["title"]=data[i].text;
+            obj["latlng"]=new kakao.maps.LatLng(data[i].y, data[i].x);
+            positions.push(obj);
+        }
+    </script>
+    <title>엔지니어 일정</title>
+</head>
+<body>
+<div>
+    <h1 th:text="${dateTime}+'날짜의 '+${centerNum}+'번 서비스 센터 일정'"></h1>
+</div>
+<div id="map" style="width:800px;height:600px;"></div>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=663adc7f324cf8519cdef5b460db081a"></script>
+    <script>
+        var container = document.getElementById('map');
+        var options = {
+            // center: new kakao.maps.LatLng(35.147796229, 129.110061304),
+            center: new kakao.maps.LatLng(lat, lon),
+            level: 6
+        };
+        var map = new kakao.maps.Map(container, options);
+        for (var i = 0; i < positions.length; i ++) {
+            var content='<div class="customoverlay"><span class="title">'+ positions[i].title+'</span></div>';
+            var customOverlay=new kakao.maps.CustomOverlay({
+                map:map,
+                position:positions[i].latlng,
+                content:content,
+            });
+        }
+    </script>
+</body>
+</html>
