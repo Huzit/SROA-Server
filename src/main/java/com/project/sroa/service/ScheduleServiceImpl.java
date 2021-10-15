@@ -286,10 +286,10 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public void allocateSchedule(EngineerInfo engineerInfo, Product product,
-                                 String dateTime, String userId, String customerName,
+                                 String dateTime, Long userNum, String customerName,
                                  String phoneNum, String address){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        UserInfo userInfo=userInfoRepository.findById(userId);
+        UserInfo userInfo=userInfoRepository.findByuserNum(userNum);
         Schedule schedule = Schedule.builder()
                 .product(product)
                 .engineerInfo(engineerInfo)
@@ -299,6 +299,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .address(address)
                 .userInfo(userInfo)
                 .build();
+        scheduleRepository.save(schedule);
     }
 
     // findOptimunEngineerGroup의 함수의 결과가 여러명일 수 있기 때문에 작업량이 적은 엔지니어를 선별
@@ -340,6 +341,11 @@ public class ScheduleServiceImpl implements ScheduleService {
         System.out.println("엔지니어와 고객 거리의 표준편차 : " + distDev);
         System.out.println("-------------------------------------------");
 
+        if(decideList.size()==1){
+            sortEngineerNumList.add(decideList.get(0).num);
+            return sortEngineerNumList;
+        }
+
         // 비교적 거리가 먼 후보 제외
         for (int i = 0; i < decideList.size(); i++) {
             if (decideList.get(i).dist >= distMean + distDev) {
@@ -350,28 +356,32 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         System.out.println("거리상 배제후 남은 엔지니어의 수: " + decideList.size());
         List<sortElem> sortList = new ArrayList<>();
-        Integer minDistIdx = 0;
-        Integer minDirDiffIdx = 0;
+
+        Integer minDist=987654321;
+        Integer minDirDiff=987;
+
         for (int i = 0; i < decideList.size(); i++) {
             if (decideList.get(i).dist <= distMean - distDev) {
                 System.out.println("거리가 너무 가까워 선별 가능성이 높은 엔지니어 : " + decideList.get(i).num + ", 거리 : " + decideList.get(i).dist);
+
                 sortList.add(decideList.get(i));
             }
         }
         System.out.println("-------------------------------------------");
-        // 현재 그룹내에서 거리와 방향성 차이가 최소인 엔지니어 선별
-        for (int i = 0; i < sortList.size(); i++) {
-            if (decideList.get(minDirDiffIdx).dirDiff > decideList.get(i).dirDiff)
-                minDirDiffIdx = i;
-            if (decideList.get(minDistIdx).dist > decideList.get(i).dist)
-                minDistIdx = i;
-        }
 
+        // 현재 그룹내에서 거리와 방향성 차이가 최소인 엔지니어 선별
         // 거리 유독 가까운 엔지니어 중에서 선발
         if (sortList.size() > 0) {
             System.out.println("거리가 너무 가까운 엔지니어 존재 ");
             for (int i = 0; i < sortList.size(); i++) {
-                if (sortList.get(minDistIdx).dist == sortList.get(i).dist) {
+                System.out.println(decideList.get(i).num+"의 거리 : "+sortList.get(i).dist);
+                if(minDist>sortList.get(i).dist){
+                    minDist=sortList.get(i).dist;
+                }
+            }
+            System.out.println("가장 짧은 거리 : "+minDist);
+            for (int i = 0; i < sortList.size(); i++) {
+                if (minDist == sortList.get(i).dist) {
                     sortEngineerNumList.add(sortList.get(i).num);
                 }
             }
@@ -381,7 +391,14 @@ public class ScheduleServiceImpl implements ScheduleService {
         else {
             System.out.println("거리가 비슷하여 방향성 차이로 선별");
             for (int i = 0; i < decideList.size(); i++) {
-                if (decideList.get(minDirDiffIdx).dirDiff == decideList.get(i).dirDiff)
+                System.out.println(decideList.get(i).num+"의 방향성 : "+decideList.get(i).dirDiff);
+                if(minDirDiff>decideList.get(i).dirDiff){
+                    minDirDiff=decideList.get(i).dirDiff;
+                }
+            }
+            System.out.println("가장 작은 방향성 : "+minDirDiff);
+            for (int i = 0; i < decideList.size(); i++) {
+                if (minDirDiff == decideList.get(i).dirDiff)
                     sortEngineerNumList.add(decideList.get(i).num);
             }
         }

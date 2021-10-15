@@ -59,7 +59,7 @@ public class ScheduleController {
         EngineerInfo engineerInfo =scheduleService.findSmallestWorkEngineerAmongOptimum(sortEngineerNumList);
         //해당 엔지니어에 일정 부여
         Product product = scheduleService.storeProductForReserve(form.getClassifyName(), form.getContent());
-        scheduleService.allocateSchedule(engineerInfo, product, form.getDateTime(), form.getUserId(), form.getCustomerName(), form.getPhoneNum(), form.getAddress());
+        scheduleService.allocateSchedule(engineerInfo, product, form.getDateTime(), form.getUserNum(), form.getCustomerName(), form.getPhoneNum(), form.getAddress());
         return engineerInfo;
     }
 
