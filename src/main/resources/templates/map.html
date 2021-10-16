@@ -55,6 +55,7 @@
             center: new kakao.maps.LatLng(lat, lon),
             level: 6
         };
+
         var map = new kakao.maps.Map(container, options);
         for (var i = 0; i < positions.length; i ++) {
             var content='<div class="customoverlay"><span class="title">'+ positions[i].title+'</span></div>';
@@ -64,6 +65,12 @@
                 content:content,
             });
         }
+        var content='<div class="customoverlay"><span class="title"> 서비스 센터</span></div>';
+        var customOverlay = new kakao.maps.CustomOverlay({
+            map:map,
+            position: new kakao.maps.LatLng(lat, lon),
+            content : content,
+        });
     </script>
 </body>
 </html>

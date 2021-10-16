@@ -15,7 +15,7 @@ public interface ScheduleService {
 
     Product storeProductForReserve(String name, String content);
 
-    void allocateSchedule(EngineerInfo engineerInfo, Product product, String dateTime, String userId, String customerName, String phoneNum, String address);
+    void allocateSchedule(EngineerInfo engineerInfo, Product product, String dateTime, Long userId, String customerName, String phoneNum, String address);
 
 
     public class Coordinates {
