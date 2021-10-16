@@ -61,6 +61,124 @@ public class ScheduleServiceImpl implements ScheduleService {
         this.userInfoRepository=userInfoRepository;
     }
 
+    // 고객 주소를 이용하여 가장 가까운 서비스 센터와 거리를 측정
+    @Override
+    public Map<String, Object> searchNearCenter(String customerAddress) {
+        String rootAddress = customerAddress.split(" ")[0];
+        List<ServiceCenter> serviceCenters = serviceCenterRepository.findByAddressContaining(rootAddress);
+
+        Coordinates customerCoordinates = findCoordinates(customerAddress);
+
+        Integer min = MAX;
+        int min_idx = 0, idx = 0;
+        for (ServiceCenter s : serviceCenters) {
+            assert customerCoordinates != null;
+
+
+            if (s.getLongitude() == null || s.getLatitude() == null) {
+                System.out.println("현재 서비스 센터의 위도, 경도 정보가 없어 갱신");
+                Coordinates coordinates = findCoordinates(s.getAddress());
+                s.setLatitude(coordinates.lat);
+                s.setLongitude(coordinates.lon);
+                serviceCenterRepository.updatePos(s.getLatitude(), s.getLongitude(), s.getCenterNum());
+            }
+
+            Integer now = harverSine(customerCoordinates, new Coordinates(s.getLongitude(), s.getLatitude()));
+            if (now < min) {
+                min = now;
+                min_idx = idx;
+            }
+            idx += 1;
+        }
+        System.out.println("=================================================");
+        System.out.println("같은지역의 서비스 센터 및 최소 거리 탐색 완료");
+        System.out.println("가까운 서비스 센터명 : " + serviceCenters.get(min_idx));
+        System.out.println("가까운 서비스 센터주소 : " + serviceCenters.get(min_idx).getAddress());
+        System.out.println("거리 : " + min + " meter");
+
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("center", serviceCenters.get(min_idx));
+        map.put("centerCoor", findCoordinates(serviceCenters.get(min_idx).getAddress()));
+        map.put("distance", min);
+        map.put("customerCoor", customerCoordinates);
+        return map;
+    }
+
+    // 지번 주소에 대해 좌표 계산
+    private Coordinates findCoordinates(String customerAddress) {
+        String apiURL = "http://api.vworld.kr/req/address";
+        JsonParser jsonParser = JsonParserFactory.getJsonParser();
+        try {
+            URL url = new URL(apiURL);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+
+            String text_content = URLEncoder.encode(customerAddress, StandardCharsets.UTF_8);
+
+            String postParams = "service=address";
+            postParams += "&request=getcoord";
+            postParams += "&version=2.0";
+            postParams += "&crs=epsg:4326";
+            postParams += "&address=" + text_content;
+            postParams += "&refine=true";
+            postParams += "&simple=false";
+            postParams += "&format=json";
+            postParams += "&type=ROAD";
+            postParams += "&key=" + apiKey;
+
+            con.setDoOutput(true);
+            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+            wr.writeBytes(postParams);
+            wr.flush();
+            wr.close();
+            int responseCode = con.getResponseCode();
+            BufferedReader br;
+
+            if (responseCode == 200) {// 정상호출
+                br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            } else {// 에러발생
+                br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
+            }
+
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+
+            while ((inputLine = br.readLine()) != null) {
+                response.append(inputLine);
+            }
+            br.close();
+            con.disconnect();
+            Map<String, Object> map = jsonParser.parseMap(response.toString());
+            Map<String, Object> point = (Map<String, Object>) ((Map<String, Object>) ((Map<String, Object>) map.get("response")).get("result")).get("point");
+
+            return new Coordinates(Double.parseDouble((String) point.get("x")), Double.parseDouble((String) point.get("y")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // 직선거리 미터 반환
+    private Integer harverSine(Coordinates coordinates1, Coordinates coordinates2) {
+        double dist;
+        double radius = 6371;//지구 반지름
+        double toRadian = Math.PI / 180; // 라디안 변환을 위해
+
+        double deltaLat = convertDegreesToRadians(Math.abs(coordinates1.lat - coordinates2.lat));
+        double deltaLon = convertDegreesToRadians(Math.abs(coordinates1.lon - coordinates2.lon));
+
+        double sinDeltaLat = Math.sin(deltaLat / 2);
+        double sinDeltaLon = Math.sin(deltaLon / 2);
+
+        double squareRoot = Math.sqrt(
+                sinDeltaLat * sinDeltaLat +
+                        Math.cos(coordinates1.lat) * Math.cos(coordinates2.lat) * sinDeltaLat * sinDeltaLon);
+
+        dist = 2 * radius * Math.asin(squareRoot);
+        return Math.toIntExact(Math.round(dist * 1000));
+    }
+
     //날짜와 가장 가까운 서비스 센터가 주어졌을때 시간대 마다 가능한 엔지니어가 있는지를 조회
     @Override
     public List<Boolean> searchAvailableTime(String date, Map<String, Object> closeCenter) {
@@ -123,50 +241,6 @@ public class ScheduleServiceImpl implements ScheduleService {
             map.put(time, list);
         }
         System.out.println("=================================================");
-        return map;
-    }
-
-    // 고객 주소를 이용하여 가장 가까운 서비스 센터와 거리를 측정
-    @Override
-    public Map<String, Object> searchNearCenter(String customerAddress) {
-        String rootAddress = customerAddress.split(" ")[0];
-        List<ServiceCenter> serviceCenters = serviceCenterRepository.findByAddressContaining(rootAddress);
-
-        Coordinates customerCoordinates = findCoordinates(customerAddress);
-
-        Integer min = MAX;
-        int min_idx = 0, idx = 0;
-        for (ServiceCenter s : serviceCenters) {
-            assert customerCoordinates != null;
-
-
-            if (s.getLongitude() == null || s.getLatitude() == null) {
-                System.out.println("현재 서비스 센터의 위도, 경도 정보가 없어 갱신");
-                Coordinates coordinates = findCoordinates(s.getAddress());
-                s.setLatitude(coordinates.lat);
-                s.setLongitude(coordinates.lon);
-                serviceCenterRepository.updatePos(s.getLatitude(), s.getLongitude(), s.getCenterNum());
-            }
-
-            Integer now = harverSine(customerCoordinates, new Coordinates(s.getLongitude(), s.getLatitude()));
-            if (now < min) {
-                min = now;
-                min_idx = idx;
-            }
-            idx += 1;
-        }
-        System.out.println("=================================================");
-        System.out.println("같은지역의 서비스 센터 및 최소 거리 탐색 완료");
-        System.out.println("가까운 서비스 센터명 : " + serviceCenters.get(min_idx));
-        System.out.println("가까운 서비스 센터주소 : " + serviceCenters.get(min_idx).getAddress());
-        System.out.println("거리 : " + min + " meter");
-
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("center", serviceCenters.get(min_idx));
-        map.put("centerCoor", findCoordinates(serviceCenters.get(min_idx).getAddress()));
-        map.put("distance", min);
-        map.put("customerCoor", customerCoordinates);
         return map;
     }
 
@@ -274,61 +348,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         return findOptimunEngineers(decideList);
     }
 
-    @Override
-    public Product storeProductForReserve(String classifyName, String content) {
-        Product product=Product.builder()
-                .classifyName(classifyName)
-                .problem(content)
-                .build();
-
-        return productRepository.save(product);
-    }
-
-    @Override
-    public void allocateSchedule(EngineerInfo engineerInfo, Product product,
-                                 String dateTime, Long userNum, String customerName,
-                                 String phoneNum, String address){
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        UserInfo userInfo=userInfoRepository.findByuserNum(userNum);
-        Schedule schedule = Schedule.builder()
-                .product(product)
-                .engineerInfo(engineerInfo)
-                .startDate(LocalDateTime.parse(dateTime, formatter))
-                .customerName(customerName)
-                .phoneNum(phoneNum)
-                .address(address)
-                .userInfo(userInfo)
-                .build();
-        scheduleRepository.save(schedule);
-    }
-
-    // findOptimunEngineerGroup의 함수의 결과가 여러명일 수 있기 때문에 작업량이 적은 엔지니어를 선별
-    @Override
-    public EngineerInfo findSmallestWorkEngineerAmongOptimum(List<Long> sortEngineerNumList) {
-        System.out.println("최종 선별 후 엔지니어 수 : " + sortEngineerNumList.size());
-        EngineerInfo res = null;
-
-        // 결과 엔지니어가 여러명이라면 작업량으로 선별
-        if (sortEngineerNumList.size() > 1) {
-            System.out.println("최종 선별된 엔지니어가 여러명 -> " + sortEngineerNumList.size());
-            int maxIdx = 0;
-            int max = engineerInfoRepository.findWorkByNum(sortEngineerNumList.get(0));
-            for (int i = 1; i < sortEngineerNumList.size(); i++) {
-                int temp = engineerInfoRepository.findWorkByNum(sortEngineerNumList.get(i));
-                if (max < temp) {
-                    max = temp;
-                    maxIdx = i;
-                }
-            }
-            res = engineerInfoRepository.findByEngineerNum(sortEngineerNumList.get(maxIdx));
-        }
-        // 결과 1명 -> 엔지니어 배정
-        else {
-            res = engineerInfoRepository.findByEngineerNum(sortEngineerNumList.get(0));
-        }
-        return res;
-    }
-
     // 엔지니어들의 거리, 방향성을 이용하여 최적 엔지니어 그룹을 판별
     // 표준 편차에서 벗어난(유독 거리가 짧은) 엔지니어가 있다면 그 중 거리가 짧은 엔지니어
     // 벗어난 엔지니어들이 없다면 엔지니어마다 거리가 비슷하다는 의미로 방향성 차이가 가장 적은 엔지니어
@@ -407,6 +426,62 @@ public class ScheduleServiceImpl implements ScheduleService {
         return sortEngineerNumList;
     }
 
+
+    // findOptimunEngineerGroup의 함수의 결과가 여러명일 수 있기 때문에 작업량이 적은 엔지니어를 선별
+    @Override
+    public EngineerInfo findSmallestWorkEngineerAmongOptimum(List<Long> sortEngineerNumList) {
+        System.out.println("최종 선별 후 엔지니어 수 : " + sortEngineerNumList.size());
+        EngineerInfo res = null;
+
+        // 결과 엔지니어가 여러명이라면 작업량으로 선별
+        if (sortEngineerNumList.size() > 1) {
+            System.out.println("최종 선별된 엔지니어가 여러명 -> " + sortEngineerNumList.size());
+            int maxIdx = 0;
+            int max = engineerInfoRepository.findWorkByNum(sortEngineerNumList.get(0));
+            for (int i = 1; i < sortEngineerNumList.size(); i++) {
+                int temp = engineerInfoRepository.findWorkByNum(sortEngineerNumList.get(i));
+                if (max < temp) {
+                    max = temp;
+                    maxIdx = i;
+                }
+            }
+            res = engineerInfoRepository.findByEngineerNum(sortEngineerNumList.get(maxIdx));
+        }
+        // 결과 1명 -> 엔지니어 배정
+        else {
+            res = engineerInfoRepository.findByEngineerNum(sortEngineerNumList.get(0));
+        }
+        return res;
+    }
+
+    @Override
+    public Product storeProductForReserve(String classifyName, String content) {
+        Product product=Product.builder()
+                .classifyName(classifyName)
+                .problem(content)
+                .build();
+
+        return productRepository.save(product);
+    }
+
+    @Override
+    public void allocateSchedule(EngineerInfo engineerInfo, Product product,
+                                 String dateTime, Long userNum, String customerName,
+                                 String phoneNum, String address){
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        UserInfo userInfo=userInfoRepository.findByuserNum(userNum);
+        Schedule schedule = Schedule.builder()
+                .product(product)
+                .engineerInfo(engineerInfo)
+                .startDate(LocalDateTime.parse(dateTime, formatter))
+                .customerName(customerName)
+                .phoneNum(phoneNum)
+                .address(address)
+                .userInfo(userInfo)
+                .build();
+        scheduleRepository.save(schedule);
+    }
+
     // 평균구하기
     private Integer calcMean(List<sortElem> decideList) {
         Integer sum = 0;
@@ -415,7 +490,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
         return (int) sum / decideList.size();
     }
-
     // 표준편차 구하기
     private Double calcDev(List<sortElem> decideList) {
         double sum = 0.0;
@@ -428,15 +502,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
         return Math.sqrt(sum / decideList.size());
     }
-
-    // 방위각 차이 구하기
-    Integer calcDirDiff(Coordinates before, Coordinates now, Coordinates after) {
-        Integer dir1 = calcDir(before, now);
-        Integer dir2 = calcDir(now, after);
-        Integer diff1 = Math.abs(dir1 - dir2);
-        return Math.min(diff1, 360 - diff1);
-    }
-
     // 좌표간 방향성(방위각) 구구하기
     private Integer calcDir(Coordinates a, Coordinates b) {
         double lat1_rad = convertDegreesToRadians(a.lat);
@@ -447,86 +512,18 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         return ((int) convertRadiansToDegrees(Math.atan2(y, x)) + 360) % 360;
     }
-
-    // 직선거리 미터 반환
-    private Integer harverSine(Coordinates coordinates1, Coordinates coordinates2) {
-        double dist;
-        double radius = 6371;//지구 반지름
-        double toRadian = Math.PI / 180; // 라디안 변환을 위해
-
-        double deltaLat = convertDegreesToRadians(Math.abs(coordinates1.lat - coordinates2.lat));
-        double deltaLon = convertDegreesToRadians(Math.abs(coordinates1.lon - coordinates2.lon));
-
-        double sinDeltaLat = Math.sin(deltaLat / 2);
-        double sinDeltaLon = Math.sin(deltaLon / 2);
-
-        double squareRoot = Math.sqrt(
-                sinDeltaLat * sinDeltaLat +
-                        Math.cos(coordinates1.lat) * Math.cos(coordinates2.lat) * sinDeltaLat * sinDeltaLon);
-
-        dist = 2 * radius * Math.asin(squareRoot);
-        return Math.toIntExact(Math.round(dist * 1000));
+    // 방위각 차이 구하기
+    Integer calcDirDiff(Coordinates before, Coordinates now, Coordinates after) {
+        Integer dir1 = calcDir(before, now);
+        Integer dir2 = calcDir(now, after);
+        Integer diff1 = Math.abs(dir1 - dir2);
+        return Math.min(diff1, 360 - diff1);
     }
 
     private double convertDegreesToRadians(double deg) {
         return (deg * Math.PI / 180);
     }
-
     private double convertRadiansToDegrees(double rad) {
         return (rad * 180 / Math.PI);
-    }
-
-    // 지번 주소에 대해 좌표 계산
-    private Coordinates findCoordinates(String customerAddress) {
-        String apiURL = "http://api.vworld.kr/req/address";
-        JsonParser jsonParser = JsonParserFactory.getJsonParser();
-        try {
-            URL url = new URL(apiURL);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-
-            String text_content = URLEncoder.encode(customerAddress, StandardCharsets.UTF_8);
-
-            String postParams = "service=address";
-            postParams += "&request=getcoord";
-            postParams += "&version=2.0";
-            postParams += "&crs=epsg:4326";
-            postParams += "&address=" + text_content;
-            postParams += "&refine=true";
-            postParams += "&simple=false";
-            postParams += "&format=json";
-            postParams += "&type=ROAD";
-            postParams += "&key=" + apiKey;
-
-            con.setDoOutput(true);
-            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-            wr.writeBytes(postParams);
-            wr.flush();
-            wr.close();
-            int responseCode = con.getResponseCode();
-            BufferedReader br;
-
-            if (responseCode == 200) {// 정상호출
-                br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            } else {// 에러발생
-                br = new BufferedReader(new InputStreamReader(con.getErrorStream()));
-            }
-
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-
-            while ((inputLine = br.readLine()) != null) {
-                response.append(inputLine);
-            }
-            br.close();
-            con.disconnect();
-            Map<String, Object> map = jsonParser.parseMap(response.toString());
-            Map<String, Object> point = (Map<String, Object>) ((Map<String, Object>) ((Map<String, Object>) map.get("response")).get("result")).get("point");
-
-            return new Coordinates(Double.parseDouble((String) point.get("x")), Double.parseDouble((String) point.get("y")));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 }
